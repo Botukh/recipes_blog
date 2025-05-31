@@ -1,110 +1,118 @@
 from django.db.models import Sum
 from django.http import HttpResponse
-from rest_framework import status, viewsets
+from django.shortcuts import get_object_or_404
+
+from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from apps.api.filters import RecipeFilter
-from apps.api.pagination import LimitPageNumberPagination
-from apps.api.permissions import IsAuthorOrReadOnly
-from .models import Recipe, Tag, Ingredient, Favorite, ShoppingCart, RecipeIngredient
-from .serializers import (
-    TagSerializer, IngredientSerializer,
-    RecipeListSerializer, RecipeCreateUpdateSerializer,
-    RecipeMinifiedSerializer
+from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, AllowAny
 )
+from rest_framework.response import Response
 
-
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    permission_classes = (AllowAny,)
-
-
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = {'name': ['istartswith']}
+from .models import (
+    Recipe, Favorite, ShoppingCart, RecipeIngredient,
+    Ingredient, Tag
+)
+from .serializers import (
+    RecipeReadSerializer, RecipeWriteSerializer,
+    IngredientSerializer, TagSerializer
+)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
-    pagination_class = LimitPageNumberPagination
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipeFilter
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
-        if self.action in ('create', 'partial_update'):
-            return RecipeCreateUpdateSerializer
-        return RecipeListSerializer
+        if self.action in ('list', 'retrieve'):
+            return RecipeReadSerializer
+        return RecipeWriteSerializer
 
-    @action(
-        detail=True, methods=['get'],
-        permission_classes=(AllowAny,)
-    )
-    def get_link(self, request, pk=None):
-        recipe = self.get_object()
-        # Предполагаем, что у Recipe есть метод get_short_link()
-        return Response(
-            {'short-link': recipe.get_short_link()}
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def _add_to(self, model, user, recipe):
+        if not user.is_authenticated:
+            raise ValidationError('Необходима авторизация.')
+        if model.objects.filter(user=user, recipe=recipe).exists():
+            raise ValidationError('Рецепт уже добавлен.')
+        model.objects.create(user=user, recipe=recipe)
+        serializer = RecipeReadSerializer(
+            recipe,
+            context={'request': self.request}
         )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(
-        detail=True, methods=['post', 'delete'],
-        permission_classes=(IsAuthenticated,)
-    )
+    def _remove_from(self, model, user, recipe):
+        if not user.is_authenticated:
+            raise ValidationError('Необходима авторизация.')
+        obj = model.objects.filter(user=user, recipe=recipe)
+        if not obj.exists():
+            raise ValidationError('Рецепта нет в списке.')
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):
-        recipe = self.get_object()
-        user = request.user
-        if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            Favorite.objects.create(user=user, recipe=recipe)
-            data = RecipeMinifiedSerializer(recipe).data
-            return Response(data, status=status.HTTP_201_CREATED)
-        deleted, _ = Favorite.objects.filter(user=user, recipe=recipe).delete()
-        if not deleted:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        recipe = get_object_or_404(Recipe, pk=pk)
+        return self._add_to(Favorite, request.user, recipe)
 
-    @action(
-        detail=True, methods=['post', 'delete'],
-        permission_classes=(IsAuthenticated,)
-    )
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        return self._remove_from(Favorite, request.user, recipe)
+
+    @action(detail=True, methods=['post'])
     def shopping_cart(self, request, pk=None):
-        recipe = self.get_object()
-        user = request.user
-        if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            ShoppingCart.objects.create(user=user, recipe=recipe)
-            data = RecipeMinifiedSerializer(recipe).data
-            return Response(data, status=status.HTTP_201_CREATED)
-        deleted, _ = ShoppingCart.objects.filter(user=user, recipe=recipe).delete()
-        if not deleted:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        recipe = get_object_or_404(Recipe, pk=pk)
+        return self._add_to(ShoppingCart, request.user, recipe)
 
-    @action(
-        detail=False, methods=['get'],
-        permission_classes=(IsAuthenticated,)
-    )
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        return self._remove_from(ShoppingCart, request.user, recipe)
+
+    @action(detail=False, methods=['get'])
     def download_shopping_cart(self, request):
-        user = request.user
-        qs = RecipeIngredient.objects.filter(
-            recipe__in_carts__user=user
+        if not request.user.is_authenticated:
+            return Response({'error': 'Требуется авторизация'}, status=401)
+
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in_shopping_cart__user=request.user
         ).values(
             'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(total=Sum('amount'))
+        ).annotate(total_amount=Sum('amount'))
+
         lines = [
-            f"{i['ingredient__name']} ({i['ingredient__measurement_unit']}) — {i['total']}"
-            for i in qs
+            f"{item['ingredient__name']} "
+            f"({item['ingredient__measurement_unit']}) — "
+            f"{item['total_amount']}"
+            for item in ingredients
         ]
+
         content = '\n'.join(lines)
-        return HttpResponse(
-            content, content_type='text/plain',
-            headers={'Content-Disposition': 'attachment; filename="shopping.txt"'}
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_list.txt"'
         )
+        return response
+
+
+class IngredientViewSet(mixins.ListModelMixin,
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [SearchFilter]
+    search_fields = ['^name']
+
+
+class TagViewSet(mixins.ListModelMixin,
+                 mixins.RetrieveModelMixin,
+                 viewsets.GenericViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [AllowAny]
