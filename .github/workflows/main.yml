@@ -89,7 +89,7 @@ jobs:
             cd /home/yc-user/foodgram
             mkdir -p ./media
             mkdir -p ./docs
-            cat > .env << EOF
+            cat > infra/.env << EOF
             DJANGO_SECRET_KEY=_w&t3ceb_8jz28vdqrrd^-j@&))^8qhzzi*)g(f#nnd0x)lshh
             ALLOWED_HOSTS=localhost,foodgamm.zapto.org,130.193.42.80
             DEBUG=False
