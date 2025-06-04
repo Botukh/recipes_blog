@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    image: ${{ secrets.DOCKER_USERNAME }}/foodgram-backend:latest
+    image: julia949/foodgram-backend:latest
     container_name: foodgram-back
     restart: unless-stopped
     env_file:
@@ -24,7 +24,7 @@ services:
       - db
 
   frontend:
-    image: ${{ secrets.DOCKER_USERNAME }}/foodgram-frontend:latest
+    image: julia949/foodgram-frontend:latest
     container_name: foodgram-front
     restart: "no"
     volumes:
