@@ -76,7 +76,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "infra/docker-compose.yml"
-          target: "${{ secrets.REMOTE_DIR }}"
+          target: "foodgram"
 
       - name: Execute remote SSH commands for deployment
         uses: appleboy/ssh-action@master
@@ -86,24 +86,24 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd ${{ secrets.REMOTE_DIR }}
+            cd foodgram
             mkdir -p ./media
             mkdir -p ./docs
             cat > .env << EOF
-            DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+            DJANGO_SECRET_KEY=_w&t3ceb_8jz28vdqrrd^-j@&))^8qhzzi*)g(f#nnd0x)lshh
+            ALLOWED_HOSTS=localhost,foodgamm.zapto.org,130.193.42.80
             DEBUG=False
-            ALLOWED_HOSTS=localhost,${{ secrets.SERVER_IP }},${{ secrets.DOMAIN }}
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=foodgram_user
+            POSTGRES_PASSWORD=mysecretpassword
+            POSTGRES_DB=foodgram
             DB_HOST=db
             DB_PORT=5432
             EOF
-            sudo docker-compose pull
-            sudo docker-compose down
-            sudo docker-compose up -d
+            sudo docker compose -f docker-compose.production.yml pull
+            sudo docker compose -f docker-compose.production.yml down
+            sudo docker compose -f docker-compose.production.yml up -d
             sleep 5
-            sudo docker-compose exec -T backend python manage.py migrate --noinput
+            sudo docker-compose exec -T backend python manage.py migrate
             sudo docker-compose exec -T backend python manage.py collectstatic --noinput
 
   send_telegram_notification:
