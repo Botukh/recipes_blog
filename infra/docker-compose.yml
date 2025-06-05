@@ -1,4 +1,4 @@
-
+version: '3.8'
 
 services:
 
@@ -31,7 +31,7 @@ services:
       - frontend_build:/app/build
 
   nginx:
-    image: nginx:1.25.4-alpine
+    image: julia949/foodgram-nginx:latest
     container_name: foodgram-proxy
     restart: unless-stopped
     depends_on:
@@ -39,9 +39,7 @@ services:
       - frontend
     ports:
       - "8080:80"
-
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - frontend_build:/usr/share/nginx/html:ro
       - ./docs:/usr/share/nginx/html/api/docs:ro
