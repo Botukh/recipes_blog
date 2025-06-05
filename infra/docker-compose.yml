@@ -32,7 +32,7 @@ services:
 
   nginx:
     image: julia949/foodgram-nginx:latest
-    container_name: foodgram-proxy
+    container_name: nginx
     restart: unless-stopped
     depends_on:
       - backend
@@ -40,6 +40,7 @@ services:
     ports:
       - "8080:80"
     volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - frontend_build:/usr/share/nginx/html:ro
       - ./docs:/usr/share/nginx/html/api/docs:ro
