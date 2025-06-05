@@ -1,5 +1,3 @@
-FROM nginx:1.28.0-alpine
+FROM nginx:1.27.5
 
-WORKDIR /etc/nginx
-
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
