@@ -104,7 +104,6 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.yml"
           target: "/home/yc-user/foodgram/"
-          scp_flags: "-r -vvv -o StrictHostKeyChecking=no"
 
       - name: Execute remote SSH commands for deployment
         uses: appleboy/ssh-action@master
