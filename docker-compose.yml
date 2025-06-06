@@ -17,7 +17,7 @@ services:
     env_file:
       - .env
     volumes:
-      - static:/app/static/
+      - static:/static/
       - media:/app/media
       - ./data:/app/data
     depends_on:
@@ -37,6 +37,6 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - static:/app/static/
+      - static:/static/
       - media:/app/media
 
