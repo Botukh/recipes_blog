@@ -95,6 +95,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Test SSH connection and permissions
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            echo "=== Connection successful ==="
+            whoami
+            pwd
+            echo "=== Home directory ==="
+            ls -la ~/
+            echo "=== Target directory ==="
+            ls -la /home/$(whoami)/foodgram || echo "Directory does not exist"
+            echo "=== Creating directory ==="
+            mkdir -p /home/$(whoami)/foodgram
+            chmod 755 /home/$(whoami)/foodgram
+            echo "=== Testing write permissions ==="
+            touch /home/$(whoami)/foodgram/test.txt
+            rm /home/$(whoami)/foodgram/test.txt
+            echo "=== Disk space ==="
+            df -h /home/$(whoami)/
+            echo "=== SSH daemon config ==="
+            sudo grep -i "allowusers\|denyusers\|allowgroups\|denygroups" /etc/ssh/sshd_config || echo "No user restrictions"
+            
       - name: Copy docker-compose.yml to remote server
         uses: appleboy/scp-action@master
         with:
