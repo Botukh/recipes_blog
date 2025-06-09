@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
+from django.templatetags.static import static
+
+
 from .models import User, Subscription
 from recipes.serializers_minified import RecipeMinifiedSerializer
 
@@ -19,7 +22,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
-    avatar = serializers.ImageField(read_only=True)
+    avatar = serializers.ImageField()
 
     class Meta:
         model = User
@@ -32,6 +35,12 @@ class CustomUserSerializer(UserSerializer):
             'avatar',
             'is_subscribed'
         )
+
+    def get_avatar(self, obj):
+        request = self.context['request']
+        if obj.avatar:
+            return request.build_absolute_uri(obj.avatar.url)
+        return request.build_absolute_uri(static('users/avatar-icon.png'))
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
