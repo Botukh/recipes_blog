@@ -95,32 +95,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Test SSH connection and permissions
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          script: |
-            echo "=== Connection successful ==="
-            whoami
-            pwd
-            echo "=== Home directory ==="
-            ls -la ~/
-            echo "=== Target directory ==="
-            ls -la /home/$(whoami)/foodgram || echo "Directory does not exist"
-            echo "=== Creating directory ==="
-            mkdir -p /home/$(whoami)/foodgram
-            chmod 755 /home/$(whoami)/foodgram
-            echo "=== Testing write permissions ==="
-            touch /home/$(whoami)/foodgram/test.txt
-            rm /home/$(whoami)/foodgram/test.txt
-            echo "=== Disk space ==="
-            df -h /home/$(whoami)/
-            echo "=== SSH daemon config ==="
-            sudo grep -i "allowusers\|denyusers\|allowgroups\|denygroups" /etc/ssh/sshd_config || echo "No user restrictions"
-
       - name: Copy docker-compose.yml to remote server
         uses: appleboy/scp-action@master
         with:
@@ -129,9 +103,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.yml"
-          target: "/home/yc-user/foodgram"
-          overwrite: true
-          debug: true
+          target: "foodgram"
 
       - name: Execute remote SSH commands for deployment
         uses: appleboy/ssh-action@master
@@ -141,7 +113,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd /home/yc-user/foodgram
+            cd foodgram
             mkdir -p media
             cat > .env << EOF
             DJANGO_SECRET_KEY=_w&t3ceb_8jz28vdqrrd^-j@&))^8qhzzi*)g(f#nnd0x)lshh
@@ -153,12 +125,12 @@ jobs:
             DB_HOST=db
             DB_PORT=5432
             EOF
-            sudo docker compose -f infra/docker-compose.yml pull
-            sudo docker compose -f infra/docker-compose.yml down
-            sudo docker compose -f infra/docker-compose.yml up -d
+            sudo docker compose -f docker-compose.yml pull
+            sudo docker compose -f docker-compose.yml down
+            sudo docker compose -f docker-compose.yml up -d
             sleep 5
-            sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py migrate --noinput
-            sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py collectstatic --noinput
+            sudo docker compose -f docker-compose.yml exec -T backend python manage.py migrate --noinput
+            sudo docker compose -f docker-compose.yml exec -T backend python manage.py collectstatic --noinput
 
   send_telegram_notification:
     if: github.ref == 'refs/heads/main'
