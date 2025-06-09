@@ -1,67 +1,58 @@
-from rest_framework import viewsets, status
+# users/views.py
+from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from .models import User, Subscription
+
+from .models import Subscription, User
 from .serializers import SubscriptionSerializer
 
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = SubscriptionSerializer
+class UserViewSet(DjoserUserViewSet):
 
-    @action(detail=False, permission_classes=[IsAuthenticated])
-    def subscriptions(self, request):
-        queryset = User.objects.filter(following__user=request.user)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = SubscriptionSerializer(
-                page, many=True, context={'request': request}
-            )
-            return self.get_paginated_response(serializer.data)
+    @action(detail=False,
+            permission_classes=[IsAuthenticated],
+            serializer_class=SubscriptionSerializer)
+    def subscriptions(self, request, *args, **kwargs):
+        authors = User.objects.filter(following__user=request.user)
+        page = self.paginate_queryset(authors)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionSerializer(
-            queryset, many=True, context={'request': request}
-        )
-        return Response(serializer.data)
+    @action(detail=True,
+            methods=["post", "delete"],
+            permission_classes=[IsAuthenticated],
+            serializer_class=SubscriptionSerializer)
+    def subscribe(self, request, *args, **kwargs):
+        author = self.get_object()
 
-    @action(
-        detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
-    )
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(User, pk=pk)
-
-        if request.method == 'POST':
+        if request.method == "POST":
             if author == request.user:
                 return Response(
-                    {'detail': 'Нельзя подписаться на самого себя.'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"errors": "Нельзя подписаться на себя"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            if Subscription.objects.filter(
+            obj, created = Subscription.objects.get_or_create(
                 user=request.user, author=author
-            ).exists():
+            )
+            if not created:
                 return Response(
-                    {'detail': 'Вы уже подписаны.'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"errors": "Вы уже подписаны"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            Subscription.objects.create(user=request.user, author=author)
-            serializer = SubscriptionSerializer(
-                author, context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if request.method == 'DELETE':
-            subscription = Subscription.objects.filter(
-                user=request.user,
-                author=author
-            )
-            if subscription.exists():
-                subscription.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response(
-                {'detail': 'Вы не подписаны на этого пользователя.'},
-                status=status.HTTP_400_BAD_REQUEST
+                self.get_serializer(author).data,
+                status=status.HTTP_201_CREATED,
             )
+
+        deleted, _ = Subscription.objects.filter(
+            user=request.user, author=author
+        ).delete()
+        if deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {"errors": "Подписки не существует"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
