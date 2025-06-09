@@ -114,7 +114,7 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd foodgram
-            mkdir -p media
+            sudo mkdir -p media
             cat > .env << EOF
             DJANGO_SECRET_KEY=_w&t3ceb_8jz28vdqrrd^-j@&))^8qhzzi*)g(f#nnd0x)lshh
             ALLOWED_HOSTS=localhost,foodgamm.zapto.org,130.193.42.80
