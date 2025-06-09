@@ -131,7 +131,7 @@ jobs:
             sleep 5
             sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate --noinput
             sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
-            sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/backend_static/. /backend_static/static/
+            sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/static/. /static/
 
   send_telegram_notification:
     if: github.ref == 'refs/heads/main'
