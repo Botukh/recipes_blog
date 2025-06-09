@@ -103,7 +103,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "./docker-compose.yml"
-          target: "/home/yc-user/foodgram/"
+          target: "foodgram/"
           overwrite:  true
           debug:      true
 
