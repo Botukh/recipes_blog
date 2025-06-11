@@ -6,7 +6,6 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, max_length=254)
     avatar = models.ImageField(
         upload_to='users/',
-        default='users/avatar-icon.png',
         blank=True,
         null=True
     )
