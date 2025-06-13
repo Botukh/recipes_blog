@@ -38,5 +38,5 @@ services:
       - "8080:80"
     volumes:
       - static_volume:/staticfiles/
-      - media:/app/media
+      - media:/media
 
