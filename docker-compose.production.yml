@@ -37,6 +37,6 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - static_volume:/staticfiles/
+      - static_volume:/staticfiles
       - media:/media
 
