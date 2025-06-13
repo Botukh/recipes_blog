@@ -125,13 +125,17 @@ jobs:
             DB_HOST=db
             DB_PORT=5432
             EOF
-            sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
-            sudo docker compose -f docker-compose.production.yml up -d
+            sudo docker system prune -f
+            sudo docker compose -f docker-compose.production.yml pull
+            sudo docker compose -f docker-compose.production.yml up -d db
+            sleep 10
+            sudo docker compose -f docker-compose.production.yml up -d backend
             sleep 5
             sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate --noinput
-            sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
-
+            sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput --clear
+            sudo docker compose -f docker-compose.production.yml up frontend
+            sudo docker compose -f docker-compose.production.yml up -d nginx
 
   send_telegram_notification:
     if: github.ref == 'refs/heads/main'
