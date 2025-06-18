@@ -1,7 +1,9 @@
-FROM node:21.7.1-alpine
+FROM node:21.7.1-alpine as build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . ./
 RUN npm run build
-CMD ["npx", "-y", "http-server", "-p", "8000", "/app/build"]
+
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
