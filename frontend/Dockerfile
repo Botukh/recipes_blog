@@ -1,11 +1,12 @@
-FROM node:21.7.1-alpine AS builder
+FROM node:18
 WORKDIR /app
-COPY package*.json ./
+
+COPY package.json package.json
+COPY package-lock.json package-lock.json
+
 RUN npm install
-COPY . ./
+
+COPY . .
 RUN npm run build
 
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/build ./build
-CMD ["sh", "-c", "cp -r /app/build/. /static/ && echo 'Static files copied successfully'"]
+CMD ["npx", "-y", "http-server", "-p", "8000", "/app/build"]
