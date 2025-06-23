@@ -1,6 +1,6 @@
 volumes:
   pg_data:
-  static:
+  static_backend:
   media:
 
 services:
@@ -17,7 +17,7 @@ services:
     env_file:
       - .env
     volumes:
-      - static:/static
+      - static_backend:/static
       - media:/app/media
     depends_on:
       - db
@@ -36,5 +36,5 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - static:/static
+      - static_backend:/static
       - media:/app/media
