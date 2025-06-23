@@ -1,6 +1,6 @@
 volumes:
   pg_data:
-  static_backend:
+  static:
   media:
 
 services:
@@ -17,15 +17,16 @@ services:
     env_file:
       - .env
     volumes:
-      - static_backend:/static
+      - static:/static
       - media:/app/media
     depends_on:
       - db
 
   frontend:
     image: julia949/foodgram-frontend:latest
+    command: cp -r /app/build/. /static/
     volumes:
-      - static:/app/build
+      - static:/static
 
   nginx:
     image: julia949/foodgram-nginx:latest
@@ -36,5 +37,6 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - static_backend:/static
+      - static:/static
       - media:/app/media
+      - pg_data:/var/lib/postgresql/data
