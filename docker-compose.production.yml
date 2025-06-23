@@ -30,7 +30,7 @@ services:
         cp -r /app/build/static/* /static/
       "
     volumes:
-      - static:/frontend_static
+      - static:/static
 
   nginx:
     image: julia949/foodgram-nginx:latest
