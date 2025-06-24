@@ -8,6 +8,9 @@ class Tag(models.Model):
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(unique=True)
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return self.name
 
@@ -32,6 +35,9 @@ class Recipe(models.Model):
         Ingredient, through='RecipeIngredient'
     )
     tags = models.ManyToManyField(Tag)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.name
