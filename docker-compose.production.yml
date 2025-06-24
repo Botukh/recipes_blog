@@ -24,11 +24,7 @@ services:
 
   frontend:
     image: julia949/foodgram-frontend:latest
-    command: >
-      sh -c "
-        cp /app/build/index.html /static/ &&
-        cp -r /app/build/static/* /static/
-      "
+    command: sh -c "cp -a /app/build/. /static"
     volumes:
       - static:/static
 
