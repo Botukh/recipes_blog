@@ -40,11 +40,13 @@ class CustomUserSerializer(UserSerializer):
         )
         read_only_fields = ("avatar_url", "is_subscribed")
 
-    def get_avatar(self, obj):
-        request = self.context['request']
-        if obj.avatar:
-            return request.build_absolute_uri(obj.avatar.url)
-        return request.build_absolute_uri(static('users/avatar-icon.png'))
+    def get_avatar_url(self, obj):
+        request = self.context["request"]
+        try:
+            url = obj.avatar.url
+        except ValueError:
+            url = static("users/avatar-icon.png")
+        return request.build_absolute_uri(url)
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
