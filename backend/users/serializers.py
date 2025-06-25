@@ -1,7 +1,7 @@
 from rest_framework import serializers
+from recipes.fields import Base64ImageField
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from django.templatetags.static import static
-
 
 from .models import User, Subscription
 from recipes.serializers_minified import RecipeMinifiedSerializer
@@ -22,7 +22,9 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
-    avatar = serializers.ImageField()
+    avatar = Base64ImageField(required=False, allow_null=True)
+    avatar_url = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -33,8 +35,10 @@ class CustomUserSerializer(UserSerializer):
             'first_name',
             'last_name',
             'avatar',
+            "avatar_url",
             'is_subscribed'
         )
+        read_only_fields = ("avatar_url", "is_subscribed")
 
     def get_avatar(self, obj):
         request = self.context['request']
