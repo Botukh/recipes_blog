@@ -56,3 +56,17 @@ class UserViewSet(DjoserUserViewSet):
             {"errors": "Подписки не существует"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+    @action(
+        detail=False,
+        methods=["put", "patch"],
+        permission_classes=[IsAuthenticated],
+    )
+    def avatar(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
