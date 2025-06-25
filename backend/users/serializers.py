@@ -24,7 +24,6 @@ class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(required=False, allow_null=True)
     avatar_url = serializers.SerializerMethodField()
-    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -39,6 +38,7 @@ class CustomUserSerializer(UserSerializer):
             'is_subscribed'
         )
         read_only_fields = ("avatar_url", "is_subscribed")
+        extra_kwargs = {"avatar": {"required": False}}
 
     def get_avatar_url(self, obj):
         request = self.context["request"]
