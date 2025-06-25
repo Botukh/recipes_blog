@@ -37,7 +37,7 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(Tag)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['name']
 
     def __str__(self):
         return self.name

@@ -116,3 +116,4 @@ class TagViewSet(mixins.ListModelMixin,
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
+    pagination_class = None
