@@ -61,12 +61,12 @@ class UserViewSet(DjoserUserViewSet):
         detail=False,
         methods=["put", "patch"],
         permission_classes=[IsAuthenticated],
+        url_path="me/avatar",
+        url_name="me-avatar",
     )
-    def avatar(self, request, *args, **kwargs):
+    def set_avatar(self, request, *args, **kwargs):
         user = request.user
-        serializer = self.get_serializer(
-            user, data=request.data, partial=True
-        )
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
