@@ -118,6 +118,7 @@ jobs:
             cat > .env << EOF
             DJANGO_SECRET_KEY=_w&t3ceb_8jz28vdqrrd^-j@&))^8qhzzi*)g(f#nnd0x)lshh
             ALLOWED_HOSTS=localhost,foodgamm.zapto.org,130.193.42.80
+            CSRF_TRUSTED_ORIGINS=https://foodgamm.zapto.org
             DEBUG=False
             POSTGRES_USER=foodgram_user
             POSTGRES_PASSWORD=mysecretpassword
