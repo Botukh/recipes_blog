@@ -108,6 +108,8 @@ class IngredientViewSet(mixins.ListModelMixin,
     permission_classes = [AllowAny]
     filter_backends = [SearchFilter]
     search_fields = ['^name']
+    search_param = 'name'
+    pagination_class = None
 
 
 class TagViewSet(mixins.ListModelMixin,
