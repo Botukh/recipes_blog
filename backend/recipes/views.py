@@ -19,6 +19,7 @@ from .serializers import (
     RecipeReadSerializer, RecipeWriteSerializer,
     IngredientSerializer, TagSerializer
 )
+from .filters import IngredientSearchFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -106,9 +107,8 @@ class IngredientViewSet(mixins.ListModelMixin,
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [AllowAny]
-    filter_backends = [SearchFilter]
+    filter_backends = [IngredientSearchFilter]
     search_fields = ['^name']
-    search_param = 'name'
     pagination_class = None
 
 
