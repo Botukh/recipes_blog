@@ -129,11 +129,9 @@ jobs:
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
-            sudo docker compose -f docker-compose.production.yml exec backend \
-            sh -c "python manage.py migrate --noinput && \
-                  python manage.py collectstatic --noinput && \
-                  python manage.py import_ingredients \
-                      --format csv --path data/ingredients.csv"
+            sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate --noinput
+            sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
+            sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py import_ingredients --format csv --path /app/data/ingredients.csv
 
   send_telegram_notification:
     if: github.ref == 'refs/heads/main'
