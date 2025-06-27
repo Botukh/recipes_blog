@@ -4,18 +4,31 @@ import uuid
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
+from PIL import Image, UnidentifiedImageError
 
 
 class Base64ImageField(serializers.ImageField):
+
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             try:
-                format, imgstr = data.split(';base64,')
-                ext = format.split('/')[-1]
-                name = f'{uuid.uuid4()}.{ext}'
-                data = ContentFile(base64.b64decode(imgstr), name=name)
-            except (ValueError, binascii.Error):
+                fmt, imgstr = data.split(';base64,')
+            except ValueError:
+                raise serializers.ValidationError('Некорректный data-URL.')
+
+            try:
+                decoded = base64.b64decode(imgstr)
+            except binascii.Error:
                 raise serializers.ValidationError(
-                    'Некорректные данные изображения (Base-64).'
-                )
+                    'Не удалось декодировать base64.')
+
+            ext = fmt.split('/')[-1]
+            data = ContentFile(decoded, name=f'{uuid.uuid4()}.{ext}')
+
+            try:
+                Image.open(data).verify()
+            except (UnidentifiedImageError, OSError):
+                raise serializers.ValidationError(
+                    'Файл не является изображением.')
+
         return super().to_internal_value(data)
