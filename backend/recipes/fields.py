@@ -27,6 +27,7 @@ class Base64ImageField(serializers.ImageField):
 
             try:
                 Image.open(data).verify()
+                data.file.seek(0)
             except (UnidentifiedImageError, OSError):
                 raise serializers.ValidationError(
                     'Файл не является изображением.')
