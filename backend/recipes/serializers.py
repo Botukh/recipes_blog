@@ -1,4 +1,3 @@
-# recipes/serializers.py
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model
@@ -191,8 +190,8 @@ class _BaseUserRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         abstract = True
-        fields = ('user', 'recipe', 'created_at')
-        read_only_fields = ('user', 'recipe', 'created_at')
+        fields = ('user', 'recipe')
+        read_only_fields = ('user', 'recipe')
 
     ERR_EXISTS = 'Запись уже существует.'
 
