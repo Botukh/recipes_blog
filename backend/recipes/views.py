@@ -43,7 +43,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save()
 
     @staticmethod
     def _remove_from(model, user, recipe):
