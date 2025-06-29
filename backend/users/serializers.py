@@ -1,10 +1,11 @@
+from django.db import IntegrityError
+from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 from recipes.fields import Base64ImageField
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from django.templatetags.static import static
 
 from .models import User, Subscription
-from recipes.serializers_minified import RecipeMinifiedSerializer
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -59,20 +60,23 @@ class CustomUserSerializer(UserSerializer):
         )
 
 
-class SubscriptionSerializer(CustomUserSerializer):
-    recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ('user', 'author', 'created_at')
+        read_only_fields = ('user', 'author', 'created_at')
 
-    class Meta(CustomUserSerializer.Meta):
-        fields = list(CustomUserSerializer.Meta.fields) + ['recipes', 'recipes_count']
+    def create(self, validated_data):
+        request = self.context['request']
+        author = self.context['author']
 
-    def get_recipes(self, obj):
-        request = self.context.get('request')
-        recipes_limit = request.query_params.get('recipes_limit')
-        recipes = obj.recipe_set.all()
-        if recipes_limit:
-            recipes = recipes[:int(recipes_limit)]
-        return RecipeMinifiedSerializer(recipes, many=True).data
+        if request.user == author:
+            raise ValidationError('Нельзя подписаться на себя.')
 
-    def get_recipes_count(self, obj):
-        return obj.recipe_set.count()
+        try:
+            sub, _ = Subscription.objects.get_or_create(
+                user=request.user, author=author
+            )
+            return sub
+        except IntegrityError:
+            raise ValidationError('Вы уже подписаны на этого автора.')

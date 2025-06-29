@@ -20,30 +20,22 @@ class UserViewSet(DjoserUserViewSet):
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True,
-            methods=["post", "delete"],
-            permission_classes=[IsAuthenticated],
-            serializer_class=SubscriptionSerializer)
-    def subscribe(self, request, *args, **kwargs):
+    @action(detail=True, methods=['post', 'delete'], url_path='subscribe')
+    def subscribe(self, request, pk=None):
         author = self.get_object()
 
-        if request.method == "POST":
-            if author == request.user:
-                return Response(
-                    {"errors": "Нельзя подписаться на себя"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            obj, created = Subscription.objects.get_or_create(
-                user=request.user, author=author
+        if request.method == 'POST':
+            serializer = SubscriptionSerializer(
+                data={},
+                context={'request': request, 'author': author}
             )
-            if not created:
-                return Response(
-                    {"errors": "Вы уже подписаны"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
             return Response(
-                self.get_serializer(author).data,
-                status=status.HTTP_201_CREATED,
+                SubscriptionSerializer(
+                    instance, context={'request': request}
+                    ).data,
+                status=status.HTTP_201_CREATED
             )
 
         deleted, _ = Subscription.objects.filter(
@@ -51,11 +43,8 @@ class UserViewSet(DjoserUserViewSet):
         ).delete()
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(
-            {"errors": "Подписки не существует"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        return Response({'errors': 'Не была подписана'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False,
