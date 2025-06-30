@@ -32,8 +32,7 @@ class UserViewSet(DjoserUserViewSet):
             instance = serializer.save()
             return Response(
                 SubscriptionSerializer(
-                    instance, context={'request': request}
-                    ).data,
+                    instance, context={'request': request}).data,
                 status=status.HTTP_201_CREATED
             )
 

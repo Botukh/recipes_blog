@@ -7,7 +7,14 @@ User = get_user_model()
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'email', 'username', 'first_name', 'last_name', 'is_staff')
+    list_display = (
+        'id',
+        'email',
+        'username',
+        'first_name',
+        'last_name',
+        'is_staff'
+    )
     search_fields = ('email', 'username')
     list_filter = ('is_staff', 'is_superuser', 'is_active')
     ordering = ('id',)
@@ -16,4 +23,9 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'author')
-    search_fields = ('user__username', 'user__email', 'author__username', 'author__email')
+    search_fields = (
+        'user__username',
+        'user__email',
+        'author__username',
+        'author__email'
+    )
