@@ -1,1 +1,43 @@
 «Фудграм» — сайт, на котором пользователи будут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям также будет доступен сервис «Список покупок». Он позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
+ Разработка      | *Ботух Юлия*     | [Telegram](https://t.me/botuh) |
+ 
+ ## Технологический стек
+
+* **Python 3.12**
+* **Django 4.2** + **Django REST Framework 3.15**
+* **PostgreSQL 13**
+* **Gunicorn 23** — WSGI-сервер
+* **Nginx 1.18** — обратный прокси
+* **Docker 24 / Docker Compose v2**
+* CI/CD — **GitHub Actions** + **Docker Hub**
+
+## Быстрый старт (без Docker, локально)
+
+# 1 — Клонируем репозиторий
+git clone
+cd foodgram-project
+
+# 2 — Создаём и активируем вирт-окружение
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
+# 3 — Ставим зависимости
+pip install -r requirements.txt
+
+# 4 — Создаём базу и пользователя Postgres
+psql -U postgres -c "CREATE DATABASE foodgram;"
+psql -U postgres -c "CREATE USER foodgram_user WITH PASSWORD 'pass';"
+psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE foodgram TO foodgram_user;"
+
+# 5 — Заполняем .env
+cp .env.example .env
+
+# 6 — Применяем миграции
+python manage.py migrate
+
+# 7 — Создаём суперпользователя
+python manage.py createsuperuser
+
+# 8 — Запускаем сервер
+python manage.py runserver
+
