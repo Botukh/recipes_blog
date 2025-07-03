@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from djoser.serializers import UserSerializer as DjoserBaseUserSerializer
+
 from recipes.models import (
     Recipe,
     Tag,
@@ -6,6 +8,8 @@ from recipes.models import (
     RecipeProduct,
     Favorite,
     ShoppingCart,
+    Subscription,
+    User
 )
 from recipes.constants import MIN_MEASURE
 
@@ -71,3 +75,19 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, recipe):
         return self._has_relation(recipe, ShoppingCart)
+
+
+class UserSerializer(DjoserBaseUserSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta(DjoserBaseUserSerializer.Meta):
+        model = User
+        fields = DjoserBaseUserSerializer.Meta.fields + ('is_subscribed',)
+        read_only_fields = ('is_subscribed',)
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        return (
+            request.user.is_authenticated and
+            Subscription.objects.filter(user=request.user, author=obj).exists()
+        )

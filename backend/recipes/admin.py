@@ -132,14 +132,23 @@ class RecipeAdmin(admin.ModelAdmin):
             f'<img src="{recipe.image.url}" style="max-height:50px;" />')
 
 
-@admin.register(Favorite, ShoppingCart, Subscription)
-class UserRecipeAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "recipe")
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'user__email', 'recipe__name')
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'user__email', 'recipe__name')
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'author')
     search_fields = (
-        "user__username",
-        "user__email",
-        "recipe__name",
-    )
+        'user__username', 'user__email', 'author__username', 'author__email')
 
 
 class RecipeInline(admin.TabularInline):
