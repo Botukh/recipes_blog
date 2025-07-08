@@ -38,7 +38,6 @@ class User(AbstractUser):
 class Tag(models.Model):
     name = models.CharField('Название', max_length=128, unique=True)
     slug = models.SlugField('Слаг', max_length=64, unique=True)
-    color = models.CharField('Цвет', max_length=7, default='#ffffff')
 
     class Meta:
         ordering = ('name',)
