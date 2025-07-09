@@ -26,7 +26,7 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name',
-                       'last_name', 'password']
+                       'last_name']
 
     class Meta:
         ordering = ('id',)
@@ -161,12 +161,12 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='followers',
+        related_name='subscriptions',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='followings',
+        related_name='followers',
     )
 
     class Meta:

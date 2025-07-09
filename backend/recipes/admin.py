@@ -193,8 +193,8 @@ class UserAdmin(DjangoUserAdmin):
 
     @admin.display(description="Подписок")
     def subscriptions_count(self, user):
-        return user.follower.count()
+        return user.subscriptions.count()
 
     @admin.display(description="Подписчики")
     def followers_count(self, user):
-        return user.following.count()
+        return user.followers.count()
