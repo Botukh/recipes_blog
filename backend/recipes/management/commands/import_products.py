@@ -18,7 +18,8 @@ class Command(BaseCommand):
             return
 
         objects = [
-            Product(name=row['name'].strip(), unit=row['unit'].strip())
+            Product(
+                name=row['name'].strip(), unit=row['measurement_unit'].strip())
             for row in data if row.get('name')
         ]
 
