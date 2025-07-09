@@ -1,11 +1,7 @@
-from datetime import date
-from io import BytesIO
+from django.shortcuts import get_object_or_404, redirect
+from django.views import View
 
-from django.db.models import Sum
-from django.http import FileResponse
-from django.shortcuts import get_object_or_404
-
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
@@ -21,19 +17,20 @@ from recipes.models import (
     Favorite,
     Product,
     Recipe,
-    RecipeProduct,
     ShoppingCart,
     Tag,
     Subscription,
     User,
 )
-from api.serializers import (
-    RecipeSerializer,
+from .serializers import (
     RecipeShortSerializer,
     ProductSerializer,
     TagSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer
 )
-from api.filters import RecipeFilter, ProductSearchFilter
+from .filters import RecipeFilter, ProductSearchFilter
+from .utils import generate_shopping_list
 
 __all__ = [
     'RecipeViewSet',
@@ -43,85 +40,65 @@ __all__ = [
 ]
 
 
-def _add_relation(model, user, recipe_pk):
-    recipe = get_object_or_404(Recipe, pk=recipe_pk)
-    _, created = model.objects.get_or_create(user=user, recipe=recipe)
-    if not created:
-        return Response({'errors': 'Уже добавлено'}, status=400)
-    return Response(
-        RecipeShortSerializer(recipe, context={'request': None}).data,
-        status=201
-    )
-
-
-def _remove_relation(model, user, recipe_pk):
-    obj = get_object_or_404(model, user=user, recipe__pk=recipe_pk)
-    obj.delete()
-    return Response(status=204)
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filterset_class = RecipeFilter
-    serializer_class = RecipeSerializer
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def favorite(self, request, pk=None):
-        return _add_relation(Favorite, request.user, pk)
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return RecipeReadSerializer
+        return RecipeWriteSerializer
 
-    @favorite.mapping.delete
-    def remove_favorite(self, request, pk=None):
-        return _remove_relation(Favorite, request.user, pk)
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def shopping_cart(self, request, pk=None):
-        return _add_relation(ShoppingCart, request.user, pk)
+    @staticmethod
+    def _remove_from(model, user, pk):
+        obj = get_object_or_404(model, user=user, recipe_id=pk)
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @shopping_cart.mapping.delete
-    def remove_shopping_cart(self, request, pk=None):
-        return _remove_relation(ShoppingCart, request.user, pk)
+    def _add_to(self, model, user, pk):
+        if model.objects.filter(user=user, recipe_id=pk).exists():
+            return Response(
+                {'errors': 'Рецепт уже в списке.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        recipe = get_object_or_404(Recipe, pk=pk)
+        model.objects.create(user=user, recipe=recipe)
+        data = RecipeReadSerializer(
+            recipe, context={'request': self.request}).data
+        return Response(data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], url_path='favorite',
+            permission_classes=[IsAuthenticated])
+    def add_to_favorite(self, request, pk=None):
+        return self._add_to(Favorite, request.user, pk)
+
+    @add_to_favorite.mapping.delete
+    def remove_from_favorite(self, request, pk=None):
+        return self._remove_from(Favorite, request.user, pk)
+
+    @action(detail=True, methods=['post'], url_path='shopping_cart',
+            permission_classes=[IsAuthenticated])
+    def add_to_shopping_cart(self, request, pk=None):
+        return self._add_to(ShoppingCart, request.user, pk)
+
+    @add_to_shopping_cart.mapping.delete
+    def remove_from_shopping_cart(self, request, pk=None):
+        return self._remove_from(ShoppingCart, request.user, pk)
+
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart',
+            permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        products = (
-            RecipeProduct.objects
-            .filter(recipe__shoppingcart__user=request.user)
-            .values('product__name', 'product__unit')
-            .annotate(total=Sum('measure'))
-            .order_by('product__name')
-        )
-        recipes_info = (
-            Recipe.objects
-            .filter(shoppingcart__user=request.user)
-            .values_list('name', 'author__username')
-        )
+        return generate_shopping_list(request.user)
 
-        date_str = date.today().strftime('%d.%m.%Y')
-        product_lines = [
-            f"{i}. {p['product__name'].capitalize()} — "
-            f"{p['total']} {p['product__unit']}"
-            for i, p in enumerate(products, 1)
-        ]
-        recipe_lines = [
-            f'- {name} (автор: {author})'
-            for name, author in recipes_info
-        ]
 
-        lines = [
-            f'Список покупок от {date_str}',
-            '',
-            'Продукты:',
-            *product_lines,
-            '',
-            'Рецепты:',
-            *recipe_lines,
-        ]
-
-        buffer = BytesIO('\n'.join(lines).encode())
-        return FileResponse(
-            buffer, as_attachment=True, filename='shopping_list.txt'
-        )
+class RecipeRedirectView(View):
+    def get(self, request, uuid):
+        recipe = get_object_or_404(Recipe, uuid=uuid)
+        return redirect('frontend-recipe-url', pk=recipe.id)
 
 
 class ProductViewSet(ReadOnlyModelViewSet):

@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -20,11 +21,12 @@ class User(AbstractUser):
         validators=[username_validator],
     )
     avatar = models.ImageField(
-        'Avatar', upload_to='users/', blank=True, null=True
+        'Avatar', upload_to='recipes/', blank=True, null=True
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['username', 'first_name',
+                       'last_name', 'password']
 
     class Meta:
         ordering = ('id',)
@@ -88,6 +90,7 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(Tag, **tag_m2m)
     products = models.ManyToManyField(Product, **product_m2m)
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     class Meta:
         ordering = ('name',)
@@ -158,12 +161,12 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='followers',
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='followings',
     )
 
     class Meta:
