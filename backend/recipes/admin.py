@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin, Group
 from django.utils.safestring import mark_safe
 
 from recipes.models import (
@@ -12,6 +12,8 @@ from recipes.models import (
     ShoppingCart,
     Subscription,
 )
+
+admin.site.unregister(Group)
 
 
 class RecipeProductInline(admin.TabularInline):
