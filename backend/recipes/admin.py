@@ -53,7 +53,7 @@ class HasRecipeFilter(admin.SimpleListFilter):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "unit", "recipe_count")
-    search_fields = ("name", "unit", "slug")
+    search_fields = ("name", "unit")
     list_filter = (HasRecipeFilter,)
     readonly_fields = ("recipe_count",)
 
