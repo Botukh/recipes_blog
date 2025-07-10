@@ -2,13 +2,13 @@ import json
 import pathlib
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from recipes.models import Product
+from recipes.models import Ingredient
 
-DATA_PATH = pathlib.Path('data/products.json')
+DATA_PATH = pathlib.Path('data/ingredients.json')
 
 
 class Command(BaseCommand):
-    help = 'Импорт продуктов из data/products.json (bulk_create)'
+    help = 'Импорт продуктов из data/ingredients.json (bulk_create)'
 
     def handle(self, *args, **kwargs):
         try:
@@ -18,14 +18,14 @@ class Command(BaseCommand):
             return
 
         objects = [
-            Product(
+            Ingredient(
                 name=row['name'].strip(), unit=row['measurement_unit'].strip())
             for row in data if row.get('name')
         ]
 
         with transaction.atomic():
-            Product.objects.all().delete()
-            Product.objects.bulk_create(objects, batch_size=5000)
+            Ingredient.objects.all().delete()
+            Ingredient.objects.bulk_create(objects, batch_size=5000)
 
         self.stdout.write(
             self.style.SUCCESS(f'Импортировано {len(objects)} продуктов')

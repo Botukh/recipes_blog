@@ -50,18 +50,18 @@ class Tag(models.Model):
         return self.name
 
 
-class Product(models.Model):
+class Ingredient(models.Model):
     name = models.CharField('Название', max_length=128)
     unit = models.CharField('Ед. изм.', max_length=32)
 
     class Meta:
         ordering = ('name',)
-        verbose_name = 'Продукт'
-        verbose_name_plural = 'Продукты'
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
         constraints = (
             models.UniqueConstraint(
                 fields=('name', 'unit'),
-                name='product_unique_name_unit',
+                name='ingredient_unique_name_unit',
             ),
         )
 
@@ -76,7 +76,7 @@ author_fk = dict(
 )
 
 tag_m2m = dict(verbose_name='Теги')
-product_m2m = dict(verbose_name='Продукты', through='RecipeProduct')
+ingredient_m2m = dict(verbose_name='Ингредиенты', through='RecipeIngredient')
 
 
 class Recipe(models.Model):
@@ -89,7 +89,7 @@ class Recipe(models.Model):
         validators=[MinValueValidator(MIN_COOKING_TIME)],
     )
     tags = models.ManyToManyField(Tag, **tag_m2m)
-    products = models.ManyToManyField(Product, **product_m2m)
+    ingredients = models.ManyToManyField(Ingredient, **ingredient_m2m)
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     class Meta:
@@ -101,16 +101,16 @@ class Recipe(models.Model):
         return self.name
 
 
-class RecipeProduct(models.Model):
+class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe_products',
+        related_name='recipe_ingredients',
     )
-    product = models.ForeignKey(
-        Product,
+    ingredient = models.ForeignKey(
+        Ingredient,
         on_delete=models.CASCADE,
-        related_name='product_recipes',
+        related_name='ingredient_recipes',
     )
     measure = models.PositiveIntegerField(
         'Количество',
@@ -118,12 +118,12 @@ class RecipeProduct(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Продукт в рецепте'
-        verbose_name_plural = 'Продукты в рецептах'
+        verbose_name = 'Ингредиент в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
         constraints = (
             models.UniqueConstraint(
-                fields=('recipe', 'product'),
-                name='recipe_product_unique',
+                fields=('recipe', 'ingredient'),
+                name='recipe_ingredient_unique',
             ),
         )
 

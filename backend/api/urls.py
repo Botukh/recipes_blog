@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    ProductViewSet,
+    IngredientViewSet,
     RecipeViewSet,
     TagViewSet,
     UserViewSet,
@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='users')
 router.register(r'tags', TagViewSet, basename='tags')
-router.register(r'products', ProductViewSet, basename='products')
+router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(r'recipes', RecipeViewSet, basename='recipes')
 
 urlpatterns = [

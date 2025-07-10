@@ -6,8 +6,8 @@ from .fields import Base64ImageField
 from recipes.models import (
     Recipe,
     Tag,
-    Product,
-    RecipeProduct,
+    Ingredient,
+    RecipeIngredient,
     Favorite,
     ShoppingCart,
     Subscription,
@@ -39,19 +39,19 @@ class TagSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Product
+        model = Ingredient
         fields = "__all__"
 
 
-class ProductMeasureSerializer(serializers.ModelSerializer):
+class IngredientMeasureSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source="product")
+        queryset=Ingredient.objects.all(), source="ingredient")
     measure = serializers.IntegerField(min_value=MIN_MEASURE)
 
     class Meta:
-        model = RecipeProduct
+        model = RecipeIngredient
         fields = ("id", "measure")
 
 
@@ -65,7 +65,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    products = ProductMeasureSerializer()
+    ingredients = IngredientMeasureSerializer(many=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     short_link = serializers.SerializerMethodField()
@@ -73,7 +73,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'id', 'tags', 'author', 'products',
+            'id', 'tags', 'author', 'ingredients',
             'is_favorited', 'is_in_shopping_cart',
             'name', 'image', 'text', 'cooking_time', 'short_link'
         )
@@ -98,7 +98,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    products = ProductMeasureSerializer()
+    ingredients = IngredientMeasureSerializer()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
@@ -108,21 +108,21 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'products', 'tags', 'image',
+            'ingredients', 'tags', 'image',
             'name', 'text', 'cooking_time',
         )
 
-    def validate_products(self, products_data):
-        if not products_data:
+    def validate_ingredients(self, ingredients_data):
+        if not ingredients_data:
             raise serializers.ValidationError(
                 'Необходимо указать хотя бы один ингредиент.'
             )
         self._validate_uniqueness(
-            products_data,
-            key='product',
+            ingredients_data,
+            key='ingredient',
             error_message='Ингредиенты должны быть уникальными. Повторы: {}'
         )
-        return products_data
+        return ingredients_data
 
     def validate_tags(self, tags):
         if not tags:
@@ -152,36 +152,36 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             )
 
     @staticmethod
-    def _bulk_create_products(recipe: Recipe, products_data: list[dict]):
-        RecipeProduct.objects.bulk_create([
-            RecipeProduct(
+    def _bulk_create_ingredients(recipe: Recipe, ingredients_data: list[dict]):
+        RecipeIngredient.objects.bulk_create([
+            RecipeIngredient(
                 recipe=recipe,
-                product=item['product'],
+                ingredient=item['ingredient'],
                 measure=item['measure']
             )
-            for item in products_data
+            for item in ingredients_data
         ])
 
     @transaction.atomic
     def create(self, validated_data):
-        products_data = validated_data.pop('products')
+        ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = super().create({
             **validated_data,
             'author': self.context['request'].user
         })
         recipe.tags.set(tags)
-        self._bulk_create_products(recipe, products_data)
+        self._bulk_create_ingredients(recipe, ingredients_data)
         return recipe
 
     @transaction.atomic
     def update(self, recipe: Recipe, validated_data):
-        products_data = validated_data.pop('products')
+        ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = super().update(recipe, validated_data)
         recipe.tags.set(tags)
-        recipe.recipe_products.all().delete()
-        self._bulk_create_products(recipe, products_data)
+        recipe.recipe_ingredients.all().delete()
+        self._bulk_create_ingredients(recipe, ingredients_data)
         return recipe
 
     def to_representation(self, recipe: Recipe):

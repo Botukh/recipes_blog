@@ -15,7 +15,7 @@ from djoser.views import UserViewSet as DjoserUserView
 
 from recipes.models import (
     Favorite,
-    Product,
+    Ingredient,
     Recipe,
     ShoppingCart,
     Tag,
@@ -24,17 +24,17 @@ from recipes.models import (
 )
 from .serializers import (
     RecipeShortSerializer,
-    ProductSerializer,
+    IngredientSerializer,
     TagSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer
 )
-from .filters import RecipeFilter, ProductSearchFilter
+from .filters import RecipeFilter, IngredientSearchFilter
 from .utils import generate_shopping_list
 
 __all__ = [
     'RecipeViewSet',
-    'ProductViewSet',
+    'IngredientViewSet',
     'TagViewSet',
     'UserViewSet',
 ]
@@ -101,11 +101,11 @@ class RecipeRedirectView(View):
         return redirect('frontend-recipe-url', pk=recipe.id)
 
 
-class ProductViewSet(ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+class IngredientViewSet(ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
-    filter_backends = (ProductSearchFilter,)
+    filter_backends = (IngredientSearchFilter,)
     search_fields = ('^name',)
     pagination_class = None
 

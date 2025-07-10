@@ -5,7 +5,7 @@ from rest_framework.filters import SearchFilter
 from recipes.models import Recipe, Tag, ShoppingCart
 
 
-class ProductSearchFilter(SearchFilter):
+class IngredientSearchFilter(SearchFilter):
     search_param = "name"
 
 

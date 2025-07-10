@@ -3,13 +3,13 @@ from io import BytesIO
 from django.http import FileResponse
 from django.template.loader import render_to_string
 from django.db.models import Sum
-from recipes.models import Recipe, RecipeProduct
+from recipes.models import Recipe, RecipeIngredient
 
 
 def generate_shopping_list(user):
     """Функция для создания списка покупок."""
     ingredients = (
-        RecipeProduct.objects
+        RecipeIngredient.objects
         .filter(recipe__in_shopping_carts__user=user)
         .values('ingredient__name', 'ingredient__measurement_unit')
         .annotate(total_amount=Sum('amount'))

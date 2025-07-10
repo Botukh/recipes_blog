@@ -5,9 +5,9 @@ from django.utils.safestring import mark_safe
 from recipes.models import (
     User,
     Tag,
-    Product,
+    Ingredient,
     Recipe,
-    RecipeProduct,
+    RecipeIngredient,
     Favorite,
     ShoppingCart,
     Subscription,
@@ -16,10 +16,10 @@ from recipes.models import (
 admin.site.unregister(Group)
 
 
-class RecipeProductInline(admin.TabularInline):
-    model = RecipeProduct
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
     extra = 1
-    autocomplete_fields = ("product",)
+    autocomplete_fields = ("ingredient",)
     min_num = 1
 
 
@@ -50,16 +50,16 @@ class HasRecipeFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "unit", "recipe_count")
     search_fields = ("name", "unit", "slug")
     list_filter = (HasRecipeFilter,)
     readonly_fields = ("recipe_count",)
 
     @admin.display(description="Рецептов")
-    def recipe_count(self, product):
-        return product.product_recipes.count()
+    def recipe_count(self, ingredient):
+        return ingredient.ingredient_recipes.count()
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
@@ -102,7 +102,7 @@ class RecipeAdmin(admin.ModelAdmin):
         "cooking_time",
         "author",
         "favorites_count",
-        "product_list",
+        "ingredient_list",
         "image_preview",
     )
     search_fields = (
@@ -111,19 +111,19 @@ class RecipeAdmin(admin.ModelAdmin):
         "author__email",
     )
     list_filter = ("tags", "author", CookingTimeFilter)
-    inlines = (RecipeProductInline,)
+    inlines = (RecipeIngredientInline,)
     readonly_fields = ("favorites_count", "image_preview")
 
     @admin.display(description="В избранном")
     def favorites_count(self, recipe):
         return recipe.favorite_set.count()
 
-    @admin.display(description="Продукты")
-    def product_list(self, recipe):
-        products = recipe.recipe_products.select_related("product")
+    @admin.display(description="Ингредиенты")
+    def ingredient_list(self, recipe):
+        ingredients = recipe.recipe_ingredients.select_related("ingredient")
         return ", ".join(
-            f"{rp.product.name} ({rp.measure}{rp.product.unit})"
-            for rp in products
+            f"{ri.ingredient.name} ({ri.measure}{ri.ingredient.unit})"
+            for ri in ingredients
         )
 
     @admin.display(description="Изображение")
