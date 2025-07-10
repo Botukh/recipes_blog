@@ -123,16 +123,12 @@ class UserViewSet(DjoserUserView):
             permission_classes=[IsAuthenticated],
             url_path="me/avatar",
             url_name="me-avatar",)
-    def upload_avatar(self, request):
+    def upload_avatar(self, request, *args, **kwargs):
         user = request.user
-        avatar = request.FILES.get('avatar')
-
-        if not avatar:
-            return Response({'error': 'Аватар не передан.'}, status=400)
-
-        user.avatar = avatar
-        user.save()
-        return Response({'status': 'Аватар загружен'}, status=200)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
