@@ -44,9 +44,9 @@ class HasRecipeFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value == "yes":
-            return queryset.filter(product_recipes__isnull=False).distinct()
+            return queryset.filter(ingredient_recipes__isnull=False).distinct()
         if value == "no":
-            return queryset.filter(product_recipes__isnull=True)
+            return queryset.filter(ingredient_recipes__isnull=True)
         return queryset
 
 
