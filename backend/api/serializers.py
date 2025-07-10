@@ -65,7 +65,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    products = ProductMeasureSerializer()
+    ingredients = ProductMeasureSerializer()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     short_link = serializers.SerializerMethodField()
@@ -98,7 +98,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    products = ProductMeasureSerializer()
+    ingredients = ProductMeasureSerializer()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
