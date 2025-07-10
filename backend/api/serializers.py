@@ -65,7 +65,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = ProductMeasureSerializer()
+    products = ProductMeasureSerializer()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     short_link = serializers.SerializerMethodField()
@@ -73,7 +73,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'id', 'tags', 'author', 'ingredients',
+            'id', 'tags', 'author', 'products',
             'is_favorited', 'is_in_shopping_cart',
             'name', 'image', 'text', 'cooking_time', 'short_link'
         )
@@ -98,7 +98,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    ingredients = ProductMeasureSerializer()
+    products = ProductMeasureSerializer()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
@@ -108,21 +108,21 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'ingredients', 'tags', 'image',
+            'products', 'tags', 'image',
             'name', 'text', 'cooking_time',
         )
 
-    def validate_ingredients(self, ingredients_data):
-        if not ingredients_data:
+    def validate_products(self, products_data):
+        if not products_data:
             raise serializers.ValidationError(
                 'Необходимо указать хотя бы один ингредиент.'
             )
         self._validate_uniqueness(
-            ingredients_data,
-            key='ingredient',
+            products_data,
+            key='product',
             error_message='Ингредиенты должны быть уникальными. Повторы: {}'
         )
-        return ingredients_data
+        return products_data
 
     def validate_tags(self, tags):
         if not tags:
@@ -152,36 +152,36 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             )
 
     @staticmethod
-    def _bulk_create_ingredients(recipe: Recipe, ingredients_data: list[dict]):
+    def _bulk_create_products(recipe: Recipe, products_data: list[dict]):
         RecipeProduct.objects.bulk_create([
             RecipeProduct(
                 recipe=recipe,
                 product=item['product'],
                 measure=item['measure']
             )
-            for item in ingredients_data
+            for item in products_data
         ])
 
     @transaction.atomic
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
+        products_data = validated_data.pop('products')
         tags = validated_data.pop('tags')
         recipe = super().create({
             **validated_data,
             'author': self.context['request'].user
         })
         recipe.tags.set(tags)
-        self._bulk_create_ingredients(recipe, ingredients_data)
+        self._bulk_create_products(recipe, products_data)
         return recipe
 
     @transaction.atomic
     def update(self, recipe: Recipe, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
+        products_data = validated_data.pop('products')
         tags = validated_data.pop('tags')
         recipe = super().update(recipe, validated_data)
         recipe.tags.set(tags)
         recipe.recipe_products.all().delete()
-        self._bulk_create_ingredients(recipe, ingredients_data)
+        self._bulk_create_products(recipe, products_data)
         return recipe
 
     def to_representation(self, recipe: Recipe):
