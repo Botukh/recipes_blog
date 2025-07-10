@@ -119,6 +119,18 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 class UserViewSet(DjoserUserView):
 
+    @action(detail=False, methods=['post'], url_path='me/avatar')
+    def upload_avatar(self, request):
+        user = request.user
+        avatar = request.FILES.get('avatar')
+
+        if not avatar:
+            return Response({'error': 'Аватар не передан.'}, status=400)
+
+        user.avatar = avatar
+        user.save()
+        return Response({'status': 'Аватар загружен'}, status=200)
+
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         authors = User.objects.filter(following__user=request.user)
