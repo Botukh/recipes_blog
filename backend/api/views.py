@@ -119,7 +119,10 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 class UserViewSet(DjoserUserView):
 
-    @action(detail=False, methods=['post', 'put'], url_path='me/avatar')
+    @action(detail=False, methods=['post', 'put'],
+            permission_classes=[IsAuthenticated],
+            url_path="me/avatar",
+            url_name="me-avatar",)
     def upload_avatar(self, request):
         user = request.user
         avatar = request.FILES.get('avatar')
