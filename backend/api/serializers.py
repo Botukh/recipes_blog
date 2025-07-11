@@ -69,7 +69,7 @@ class IngredientReadSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='ingredient.name')
     amount_unit = serializers.ReadOnlyField(
         source='ingredient.unit')
-    amount = serializers.ReadOnlyField()
+    amount = serializers.ReadOnlyField(source='amount')
 
     class Meta:
         model = RecipeIngredient
@@ -174,7 +174,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=item['ingredient'],
-                measure=item['measure']
+                amount=item['amount']
             )
             for item in ingredients_data
         ])
@@ -183,18 +183,17 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        recipe = super().create(validated_data)
-        recipe.author = self.context['request'].user
-        recipe.save()
+        recipe = super().create(
+            {**validated_data, 'author': self.context['request'].user})
         recipe.tags.set(tags)
         self._bulk_create_ingredients(recipe, ingredients_data)
         return recipe
 
     @transaction.atomic
-    def update(self, recipe: Recipe, validated_data):
+    def update(self, instance: Recipe, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        recipe = super().update(recipe, validated_data)
+        recipe = super().update(instance, validated_data)
         recipe.tags.set(tags)
         recipe.recipe_ingredients.all().delete()
         self._bulk_create_ingredients(recipe, ingredients_data)
