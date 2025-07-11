@@ -62,10 +62,23 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class IngredientReadSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='ingredient.id')
+    name = serializers.CharField(source='ingredient.name')
+    unit = serializers.CharField(source='ingredient.unit')
+    measure = serializers.IntegerField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'name', 'unit', 'measure')
+
+
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = UserSerializer(read_only=True)
-    ingredients = IngredientMeasureSerializer(many=True)
+    ingredients = IngredientReadSerializer(
+        many=True, source='recipe_ingredients', read_only=True
+    )
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     short_link = serializers.SerializerMethodField()
@@ -98,7 +111,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
-    ingredients = IngredientMeasureSerializer()
+    ingredients = IngredientMeasureSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
