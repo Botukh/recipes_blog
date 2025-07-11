@@ -104,7 +104,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class RecipeRedirectView(View):
     def get(self, request, uuid):
         recipe = get_object_or_404(Recipe, uuid=uuid)
-        return redirect('frontend-recipe-url', pk=recipe.id)
+        return redirect(f'/recipes/{recipe.id}/')
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
