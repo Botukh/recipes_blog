@@ -47,12 +47,14 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class IngredientMeasureSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(), source="ingredient")
-    measure = serializers.IntegerField(min_value=MIN_MEASURE)
+        queryset=Ingredient.objects.all(),
+        source='ingredient'
+    )
+    amount = serializers.IntegerField(min_value=MIN_MEASURE, source='measure')
 
     class Meta:
         model = RecipeIngredient
-        fields = ("id", "measure")
+        fields = ('id', 'amount')
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -63,15 +65,15 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
 
 class IngredientReadSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='ingredient.id')
-    name = serializers.CharField(source='ingredient.name')
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
-        source='ingredient.measurement_unit',
-    )
+        source='ingredient.measurement_unit')
+    amount = serializers.ReadOnlyField()
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'unit', 'measure')
+        fields = ('id', 'name', 'measurement_unit', 'amount')
         read_only_fields = fields
 
 
