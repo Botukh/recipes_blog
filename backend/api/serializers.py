@@ -50,7 +50,7 @@ class IngredientMeasureSerializer(serializers.ModelSerializer):
         queryset=Ingredient.objects.all(),
         source='ingredient'
     )
-    amount = serializers.IntegerField(min_value=MIN_MEASURE, source='measure')
+    amount = serializers.IntegerField(min_value=MIN_MEASURE)
 
     class Meta:
         model = RecipeIngredient
@@ -67,13 +67,13 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class IngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(
-        source='ingredient.measurement_unit')
+    amount_unit = serializers.ReadOnlyField(
+        source='ingredient.unit')
     amount = serializers.ReadOnlyField()
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = ('id', 'name', 'amount_unit', 'amount')
         read_only_fields = fields
 
 
@@ -183,10 +183,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        recipe = super().create({
-            **validated_data,
-            'author': self.context['request'].user
-        })
+        recipe = super().create(validated_data)
+        recipe.author = self.context['request'].user
+        recipe.save()
         recipe.tags.set(tags)
         self._bulk_create_ingredients(recipe, ingredients_data)
         return recipe
