@@ -2,7 +2,7 @@
 
 Продукты:
 {% for item in ingredients %}
-{{ forloop.counter }}. {{ item.ingredient__name|capfirst }} — {{ item.total_amount }} {{ item.ingredient__measurement_unit }}
+{{ forloop.counter }}. {{ item.ingredient__name|capfirst }} — {{ item.total_amount }} {{ item.ingredient__unit }}
 {% endfor %}
 
 Рецепты:

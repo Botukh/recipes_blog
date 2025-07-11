@@ -8,19 +8,17 @@ from recipes.models import Recipe, RecipeIngredient
 
 def generate_shopping_list(user):
     """Функция для создания списка покупок."""
+    recipes_qs = Recipe.objects.filter(in_shopping_carts__user=user)
+
     ingredients = (
         RecipeIngredient.objects
-        .filter(recipe__in_shopping_carts__user=user)
-        .values('ingredient__name', 'ingredient__measurement_unit')
+        .filter(recipe__in=recipes_qs)
+        .values('ingredient__name', 'ingredient__unit')
         .annotate(total_amount=Sum('amount'))
         .order_by('ingredient__name')
     )
 
-    recipes = (
-        Recipe.objects
-        .filter(in_shopping_carts__user=user)
-        .values_list('name', 'author__username')
-    )
+    recipes = recipes_qs.values_list('name', 'author__username')
 
     context = {
         'date': date.today().strftime('%d.%m.%Y'),
@@ -31,4 +29,5 @@ def generate_shopping_list(user):
     content = render_to_string('shopping_list.txt', context)
     buffer = BytesIO(content.encode('utf-8'))
     return FileResponse(
-        buffer, as_attachment=True, filename='shopping_list.txt')
+        buffer, as_attachment=True, filename='shopping_list.txt'
+    )
