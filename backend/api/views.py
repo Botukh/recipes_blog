@@ -53,6 +53,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, pk=None):
+        recipe = self.get_object()
+        short_url = request.build_absolute_uri(f'/r/{recipe.uuid}/')
+        return Response({'short_link': short_url})
+
     @staticmethod
     def _remove_from(model, user, pk):
         obj = get_object_or_404(model, user=user, recipe_id=pk)
