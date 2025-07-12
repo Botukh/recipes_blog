@@ -8,7 +8,7 @@ from recipes.models import Recipe, RecipeIngredient
 
 def generate_shopping_list(user):
     """Функция для создания списка покупок."""
-    recipes_qs = Recipe.objects.filter(in_shopping_carts__user=user)
+    recipes_qs = Recipe.objects.filter(shoppingcart__user=user)
 
     ingredients = (
         RecipeIngredient.objects
