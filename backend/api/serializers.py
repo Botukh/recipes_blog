@@ -18,6 +18,7 @@ from recipes.constants import MIN_MEASURE
 
 class UserSerializer(DjoserBaseUserSerializer):
     is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField(required=False)
 
     class Meta(DjoserBaseUserSerializer.Meta):
         model = User
