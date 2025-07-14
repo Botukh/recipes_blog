@@ -122,7 +122,7 @@ class RecipeAdmin(admin.ModelAdmin):
     def ingredient_list(self, recipe):
         ingredients = recipe.recipe_ingredients.select_related("ingredient")
         return ", ".join(
-            f"{ri.ingredient.name} ({ri.measure}{ri.ingredient.unit})"
+            f"{ri.ingredient.name} ({ri.amount}{ri.ingredient.unit})"
             for ri in ingredients
         )
 
