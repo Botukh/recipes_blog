@@ -121,12 +121,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     cooking_time = serializers.IntegerField(min_value=1)
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Recipe
         fields = (
             'ingredients', 'tags', 'image',
-            'name', 'text', 'cooking_time',
+            'name', 'text', 'cooking_time', 'author'
         )
 
     def validate_ingredients(self, ingredients_data):
