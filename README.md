@@ -41,3 +41,9 @@ python manage.py createsuperuser
 # 8 — Запускаем сервер
 python manage.py runserver
 
+
+| Раздел              | URL                                                                  |
+| ------------------- | -------------------------------------------------------------------- |
+| Сервер           | [foodgamm.zapto.org](https://foodgamm.zapto.org)                     |
+| Админка          | [foodgamm.zapto.org/admin/](https://foodgamm.zapto.org/admin/)       |
+| Документация API | [foodgamm.zapto.org/api/docs/](https://foodgamm.zapto.org/api/docs/) |
