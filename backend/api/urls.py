@@ -6,7 +6,6 @@ from .views import (
     RecipeViewSet,
     TagViewSet,
     UserViewSet,
-    RecipeRedirectView
 )
 
 router = DefaultRouter()
@@ -18,7 +17,4 @@ router.register(r'recipes', RecipeViewSet, basename='recipes')
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('djoser.urls.authtoken')),
-    path(
-        'r/<uuid:uuid>/', RecipeRedirectView.as_view(), name='recipe-short-url'
-    ),
 ]

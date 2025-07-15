@@ -97,7 +97,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
     'DEFAULT_PAGINATION_CLASS': (
-        'api.pagination.SixPerPagePagination'
+        'api.pagination.PerPagePagination'
     ),
     'PAGE_SIZE': 6,
 }

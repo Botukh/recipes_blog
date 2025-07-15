@@ -1,8 +1,8 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.views import View
-
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -10,7 +10,6 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-
 from djoser.views import UserViewSet as DjoserUserView
 
 from recipes.models import (
@@ -18,19 +17,20 @@ from recipes.models import (
     Ingredient,
     Recipe,
     ShoppingCart,
-    Tag,
     Subscription,
+    Tag,
     User,
 )
 from .serializers import (
-    RecipeShortSerializer,
     IngredientSerializer,
-    TagSerializer,
     RecipeReadSerializer,
-    RecipeWriteSerializer
+    RecipeShortSerializer,
+    RecipeWriteSerializer,
+    TagSerializer,
 )
 from .filters import RecipeFilter, IngredientSearchFilter
 from .utils import generate_shopping_list
+
 
 __all__ = [
     'RecipeViewSet',
@@ -53,29 +53,35 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(detail=True, methods=['get'], url_path='get-link')
-    def get_short_link(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        short_url = request.build_absolute_uri(f'/r/{recipe.uuid}/')
-        return Response({'short_link': short_url})
-
     @staticmethod
     def _remove_from(model, user, pk):
-        obj = get_object_or_404(model, user=user, recipe_id=pk)
-        obj.delete()
+        get_object_or_404(model, user=user, recipe_id=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _add_to(self, model, user, pk):
         if model.objects.filter(user=user, recipe_id=pk).exists():
+            raise ValidationError('Рецепт уже добавлен в список.')
+        model.objects.create(user=user, recipe_id=pk)
+        return Response(
+            RecipeReadSerializer(
+                Recipe.objects.get(pk=pk),
+                context={'request': self.request}
+            ).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, pk=None):
+        if not Recipe.objects.filter(pk=pk).exists():
             return Response(
-                {'errors': 'Рецепт уже в списке.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'detail': 'Рецепт не найден.'},
+                status=status.HTTP_404_NOT_FOUND
             )
-        recipe = get_object_or_404(Recipe, pk=pk)
-        model.objects.create(user=user, recipe=recipe)
-        data = RecipeReadSerializer(
-            recipe, context={'request': self.request}).data
-        return Response(data, status=status.HTTP_201_CREATED)
+
+        short_url = request.build_absolute_uri(
+            reverse('recipe-short-url', kwargs={'recipe_uuid': pk})
+        )
+        return Response({'short_link': short_url})
 
     @action(detail=True, methods=['post'], url_path='favorite',
             permission_classes=[IsAuthenticated])
@@ -101,12 +107,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return generate_shopping_list(request.user)
 
 
-class RecipeRedirectView(View):
-    def get(self, request, uuid):
-        recipe = get_object_or_404(Recipe, uuid=uuid)
-        return redirect(f'/recipes/{recipe.id}/')
-
-
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -125,13 +125,19 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 class UserViewSet(DjoserUserView):
 
-    @action(detail=False, methods=['post', 'put'],
-            permission_classes=[IsAuthenticated],
-            url_path="me/avatar",
-            url_name="me-avatar",)
-    def upload_avatar(self, request, *args, **kwargs):
-        user = request.user
-        serializer = self.get_serializer(user, data=request.data, partial=True)
+    @action(
+        detail=False,
+        methods=['patch'],
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
+        url_name='me-avatar'
+    )
+    def upload_avatar(self, request):
+        serializer = self.get_serializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -139,31 +145,29 @@ class UserViewSet(DjoserUserView):
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
         authors = User.objects.filter(following__user=request.user)
-        page = self.paginate_queryset(authors)
-        data = RecipeShortSerializer(
-            page, many=True, context={'request': request}
-        ).data
-        return self.get_paginated_response(data)
+        return self.get_paginated_response(
+            RecipeShortSerializer(
+                self.paginate_queryset(authors),
+                many=True,
+                context={'request': request}
+            ).data
+        )
 
-    @action(
-        detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated])
     def subscribe(self, request, pk=None):
         author = get_object_or_404(User, pk=pk)
         if request.method == 'POST':
             if author == request.user:
-                return Response(
-                    {'errors': 'Нельзя подписаться на себя'},
-                    status=400
-                )
-            Subscription.objects.get_or_create(
+                raise ValidationError('Нельзя подписаться на себя.')
+            if Subscription.objects.filter(
                 user=request.user, author=author
-            )
-            return Response(status=201)
-        sub = get_object_or_404(
-            Subscription, user=request.user, author=author
-        )
-        sub.delete()
-        return Response(status=204)
+            ).exists():
+                raise ValidationError(
+                    'Вы уже подписаны на этого пользователя.')
+            Subscription.objects.create(user=request.user, author=author)
+            return Response(status=status.HTTP_201_CREATED)
+        Subscription.objects.filter(
+            user=request.user, author=author
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,8 +1,10 @@
 from datetime import date
 from io import BytesIO
+
+from django.db.models import Sum
 from django.http import FileResponse
 from django.template.loader import render_to_string
-from django.db.models import Sum
+
 from recipes.models import Recipe, RecipeIngredient
 
 
@@ -27,7 +29,8 @@ def generate_shopping_list(user):
     }
 
     content = render_to_string('shopping_list.txt', context)
-    buffer = BytesIO(content.encode('utf-8'))
     return FileResponse(
-        buffer, as_attachment=True, filename='shopping_list.txt'
+        BytesIO(content.encode('utf-8')),
+        as_attachment=True,
+        filename='shopping_list.txt'
     )

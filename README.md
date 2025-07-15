@@ -14,31 +14,30 @@
 ## Быстрый старт (без Docker, локально)
 
 # 1 — Клонируем репозиторий
-git clone
+git clone https://github.com/Botukh/foodgram-project.git
 cd foodgram-project
 
 # 2 — Создаём и активируем вирт-окружение
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate        Windows: venv\Scripts\activate
 
 # 3 — Ставим зависимости
 pip install -r requirements.txt
 
-# 4 — Создаём базу и пользователя Postgres
-psql -U postgres -c "CREATE DATABASE foodgram;"
-psql -U postgres -c "CREATE USER foodgram_user WITH PASSWORD 'pass';"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE foodgram TO foodgram_user;"
-
-# 5 — Заполняем .env
+# 4 — Заполняем .env
 cp .env.example .env
 
-# 6 — Применяем миграции
+# 5 — Применяем миграции
 python manage.py migrate
 
-# 7 — Создаём суперпользователя
+# 6 — Импортируем данные
+python manage.py import_ingredients
+python manage.py import_tags
+
+# 6 — Создаём суперпользователя
 python manage.py createsuperuser
 
-# 8 — Запускаем сервер
+# 7 — Запускаем сервер
 python manage.py runserver
 
 
