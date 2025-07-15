@@ -127,7 +127,7 @@ class UserViewSet(DjoserUserView):
 
     @action(
         detail=False,
-        methods=['patch'],
+        methods=['put'],
         permission_classes=[IsAuthenticated],
         url_path='me/avatar',
         url_name='me-avatar'
