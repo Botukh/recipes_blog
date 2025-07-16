@@ -1,14 +1,12 @@
 from datetime import date
-
-from django.db.models import Sum
-from django.http import FileResponse
+from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.db.models import Sum
 
 from recipes.models import Recipe, RecipeIngredient
 
 
 def generate_shopping_list(user):
-    """Функция для создания списка покупок."""
     recipes_qs = Recipe.objects.filter(shoppingcart__user=user)
 
     ingredients = (
@@ -28,8 +26,6 @@ def generate_shopping_list(user):
     }
 
     content = render_to_string('shopping_list.txt', context)
-    return FileResponse(
-        content.encode('utf-8'),
-        as_attachment=True,
-        filename='shopping_list.txt'
-    )
+    response = HttpResponse(content, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+    return response
