@@ -16,18 +16,19 @@ class BaseImportCommand(BaseCommand):
             existing = set(
                 self.model.objects.values_list('name', 'unit')
             )
-            objects = [
-                self.model(**row)
-                for row in data
-                if (row['name'], row['amount_unit']) not in existing
-            ]
+            objects = []
+            for row in data:
+                name = row['name']
+                unit = row['measurement_unit']
+                if (name, unit) not in existing:
+                    objects.append(self.model(name=name, unit=unit))
             self.model.objects.bulk_create(objects)
             self.stdout.write(self.style.SUCCESS(
                 f'Импорт из {self.data_path.name} завершён: '
-                f'добавлено {len(objects)}'
+                f'добавлено {len(objects)} '
                 f'{self.model._meta.verbose_name_plural}'
             ))
         except Exception as exc:
             self.stderr.write(self.style.ERROR(
-                f'Ошибка при импорте из {self.data_path.name}: {exc}'
+            f'Ошибка при импорте из {self.data_path.name}: {exc}'
             ))
