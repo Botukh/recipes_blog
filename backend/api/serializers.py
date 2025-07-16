@@ -100,18 +100,17 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def _is_related(self, recipe: Recipe, model):
+    def _is_related(self, recipe: Recipe, related_name: str):
         user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and model.objects.filter(user=user, recipe=recipe).exists()
-        )
+        if not user.is_authenticated:
+            return False
+        return getattr(recipe, related_name).filter(user=user).exists()
 
-    def get_is_favorited(self, obj: Recipe):
-        return self._is_related(obj, Favorite)
+    def get_is_favorited(self, recipe: Recipe):
+        return self._is_related(recipe, 'in_favorites')
 
-    def get_is_in_shopping_cart(self, obj: Recipe):
-        return self._is_related(obj, ShoppingCart)
+    def get_is_in_shopping_cart(self, recipe: Recipe):
+        return self._is_related(recipe, 'in_shoppingcarts')
 
 
 class RecipeWriteSerializer(serializers.ModelSerializer):

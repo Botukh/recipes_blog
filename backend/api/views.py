@@ -33,7 +33,13 @@ from .utils import generate_shopping_list
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.prefetch_related(
+        'tags',
+        'author',
+        'ingredient_amounts__ingredient',
+        'in_favorites',
+        'in_shoppingcarts',
+    )
     permission_classes = [IsAuthenticatedOrReadOnly]
     filterset_class = RecipeFilter
 
