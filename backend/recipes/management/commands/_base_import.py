@@ -19,7 +19,7 @@ class BaseImportCommand(BaseCommand):
             objects = [
                 self.model(**row)
                 for row in data
-                if (row['name'], row['measurement_unit']) not in existing
+                if (row['name'], row['amount_unit']) not in existing
             ]
             self.model.objects.bulk_create(objects)
             self.stdout.write(self.style.SUCCESS(
