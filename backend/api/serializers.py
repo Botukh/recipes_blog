@@ -71,6 +71,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class IngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
+    amount = serializers.IntegerField(read_only=True)
     amount_unit = serializers.ReadOnlyField(source='ingredient.unit')
 
     class Meta:
@@ -84,7 +85,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     ingredients = IngredientReadSerializer(
         many=True,
-        source='recipe_ingredients',
+        source='ingredient_amounts',
         read_only=True
     )
     is_favorited = serializers.SerializerMethodField()

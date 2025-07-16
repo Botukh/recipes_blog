@@ -30,5 +30,5 @@ class BaseImportCommand(BaseCommand):
             ))
         except Exception as exc:
             self.stderr.write(self.style.ERROR(
-            f'Ошибка при импорте из {self.data_path.name}: {exc}'
+                f'Ошибка при импорте из {self.data_path.name}: {exc}'
             ))
