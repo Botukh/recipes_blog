@@ -32,7 +32,7 @@ class TagAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рецептов')
     def recipe_count(self, tag):
-        return tag.recipe_set.count()
+        return tag.recipes.count()
 
 
 class HasRecipeFilter(admin.SimpleListFilter):
@@ -61,7 +61,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рецептов')
     def recipe_count(self, ingredient):
-        return ingredient.ingredient_recipes.count()
+        return ingredient.ingredient_amounts.count()
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
