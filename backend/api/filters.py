@@ -36,7 +36,7 @@ class RecipeFilter(filters.FilterSet):
         if not user.is_authenticated:
             return qs
         return (
-            qs.filter(favorite__user=user).distinct()
+            qs.filter(in_favorites__user=user)
             if self._boolean_param(value)
             else qs
         )
