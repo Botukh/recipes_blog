@@ -128,7 +128,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def favorites_count(self, recipe):
-        return recipe.favorite_set.count()
+        return recipe.in_favorites.count()
 
     @admin.display(description='Ингредиенты')
     def ingredient_list(self, recipe):
@@ -145,7 +145,8 @@ class RecipeAdmin(admin.ModelAdmin):
     def image_preview(self, recipe):
         if not recipe.image:
             return '-'
-        return f'<img src="{recipe.image.url}" style="max-height:50px;" />'
+        return mark_safe(
+            f'<img src="{recipe.image.url}" style="max-height:50px;" />')
 
 
 @admin.register(Favorite, ShoppingCart)
@@ -233,7 +234,8 @@ class UserAdmin(DjangoUserAdmin):
     def avatar_preview(self, user):
         if not user.avatar:
             return '-'
-        return f'<img src="{user.avatar.url}" style="max-height:40px;" />'
+        return mark_safe(
+            f'<img src="{user.avatar.url}" style="max-height:40px;" />')
 
     @admin.display(description='Рецептов')
     def recipe_count(self, user):
