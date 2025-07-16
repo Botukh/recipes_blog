@@ -6,11 +6,9 @@ from rest_framework import serializers
 
 from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
 from recipes.models import (
-    Favorite,
     Ingredient,
     Recipe,
     RecipeIngredient,
-    ShoppingCart,
     Subscription,
     Tag,
     User,

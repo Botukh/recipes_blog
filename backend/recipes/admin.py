@@ -45,7 +45,8 @@ class HasRecipeFilter(admin.SimpleListFilter):
 
     def queryset(self, request, ingredients):
         if self.value() == self.YES:
-            return ingredients.filter(ingredient_recipes__isnull=False).distinct()
+            return ingredients.filter(
+                ingredient_recipes__isnull=False).distinct()
         if self.value() == self.NO:
             return ingredients.filter(ingredient_recipes__isnull=True)
         return ingredients
@@ -92,11 +93,11 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
         return (
             ('quick', f'до {limits[0][1]} мин '
-                      f'({recipes.filter(cooking_time__range=limits[0]).count()})'),
+             f'({recipes.filter(cooking_time__range=limits[0]).count()})'),
             ('medium', f'{limits[1][0]}–{limits[1][1] - 1} мин '
-                       f'({recipes.filter(cooking_time__range=limits[1]).count()})'),
+             f'({recipes.filter(cooking_time__range=limits[1]).count()})'),
             ('long', f'от {limits[2][0]} мин '
-                     f'({recipes.filter(cooking_time__range=limits[2]).count()})'),
+             f'({recipes.filter(cooking_time__range=limits[2]).count()})'),
         )
 
     def queryset(self, request, recipes):
