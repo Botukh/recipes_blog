@@ -5,7 +5,6 @@ from django.db.models import Sum
 
 from recipes.models import Recipe, RecipeIngredient
 
-
 def generate_shopping_list(user):
     recipes_qs = Recipe.objects.filter(shoppingcart__user=user)
 
@@ -24,6 +23,9 @@ def generate_shopping_list(user):
         'ingredients': ingredients,
         'recipes': recipes,
     }
+
+    print('>>> ingredients:', list(ingredients))
+    print('>>> recipes:', list(recipes))
 
     content = render_to_string('shopping_list.txt', context)
     response = HttpResponse(content, content_type='text/plain')
