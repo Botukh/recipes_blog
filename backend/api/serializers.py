@@ -1,4 +1,5 @@
 from collections import Counter
+
 from django.db import transaction
 from djoser.serializers import UserSerializer as DjoserBaseUserSerializer
 from rest_framework import serializers
@@ -23,8 +24,8 @@ class UserSerializer(DjoserBaseUserSerializer):
 
     class Meta(DjoserBaseUserSerializer.Meta):
         model = User
-        fields = DjoserBaseUserSerializer.Meta.fields + (
-            'is_subscribed', 'avatar')
+        fields = (
+            *DjoserBaseUserSerializer.Meta.fields, 'is_subscribed', 'avatar')
         read_only_fields = fields
 
     def get_is_subscribed(self, obj):
@@ -32,8 +33,7 @@ class UserSerializer(DjoserBaseUserSerializer):
         return (
             request.user.is_authenticated
             and Subscription.objects.filter(
-                user=request.user, author=obj
-            ).exists()
+                user=request.user, author=obj).exists()
         )
 
 
@@ -75,7 +75,7 @@ class IngredientReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'amount_unit')
+        fields = ('id', 'name', 'amount', 'amount_unit')
         read_only_fields = fields
 
 
@@ -128,51 +128,52 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'name', 'text', 'cooking_time'
         )
 
-    def validate_ingredients(self, ingredients_data):
-        if not ingredients_data:
-            raise serializers.ValidationError(
-                'Необходимо указать хотя бы один ингредиент.'
-            )
-        self._validate_uniqueness(
-            ingredients_data,
-            key='ingredient',
-            error_message='Ингредиенты должны быть уникальными. Повторы: {}'
-        )
-        return ingredients_data
+    def validate(self, data):
+        ingredients_data = data.get('ingredients')
+        tags_data = data.get('tags')
 
-    def validate_tags(self, tags):
-        if not tags:
-            raise serializers.ValidationError(
-                'Нужно указать хотя бы один тег.'
-            )
-        self._validate_uniqueness(
-            tags,
-            error_message='Теги должны быть уникальными. Повторы: {}'
+        if not ingredients_data:
+            raise serializers.ValidationError({
+                'ingredients': 'Необходимо указать хотя бы один ингредиент.'
+            })
+
+        if not tags_data:
+            raise serializers.ValidationError({
+                'tags': 'Нужно указать хотя бы один тег.'
+            })
+
+        self._raise_on_duplicates(
+            [item['ingredient'] for item in ingredients_data],
+            'Ингредиенты должны быть уникальными. Повторы: {}',
+            field='ingredients'
         )
-        return tags
+
+        self._raise_on_duplicates(
+            tags_data,
+            'Теги должны быть уникальными. Повторы: {}',
+            field='tags'
+        )
+
+        return data
 
     @staticmethod
-    def _validate_uniqueness(items, key=None, error_message='Повторы: {}'):
-        if key:
-            values = [item[key] for item in items]
-        else:
-            values = items
-
+    def _raise_on_duplicates(values, error_message, field):
         duplicates = [item for item, count in Counter(
             values).items() if count > 1]
         if duplicates:
-            raise serializers.ValidationError(error_message.format(duplicates))
+            raise serializers.ValidationError(
+                {field: error_message.format(duplicates)})
 
     @staticmethod
     def _bulk_create_ingredients(recipe: Recipe, ingredients_data: list[dict]):
-        RecipeIngredient.objects.bulk_create(
+        RecipeIngredient.objects.bulk_create([
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=item['ingredient'],
                 amount=item['amount']
             )
             for item in ingredients_data
-        )
+        ])
 
     @transaction.atomic
     def create(self, validated_data):

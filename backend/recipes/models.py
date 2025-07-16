@@ -13,17 +13,18 @@ username_validator = RegexValidator(
 
 class User(AbstractUser):
     email = models.EmailField('Почта', unique=True, max_length=254)
-    username = models.CharField('Юзернейм', max_length=150, unique=True)
+    username = models.CharField('Логин', max_length=150, unique=True)
     first_name = models.CharField('Имя', max_length=150)
     last_name = models.CharField('Фамилия', max_length=150)
     avatar = models.ImageField(
-        'Аватар', upload_to='users/', blank=True, null=True)
+        'Аватар', upload_to='users/', blank=True, null=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
-        ordering = ['username']
+        ordering = ('username',)
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
@@ -74,22 +75,25 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления (мин)',
         validators=[MinValueValidator(
-            MIN_COOKING_TIME, message=f'Минимум — {MIN_COOKING_TIME} минута')]
+            MIN_COOKING_TIME,
+            message=f'Минимум — {MIN_COOKING_TIME} минута'
+        )]
     )
-
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
+        related_name='recipes',
         verbose_name='Ингредиенты'
     )
     tags = models.ManyToManyField(
         Tag,
+        related_name='recipes',
         verbose_name='Теги'
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -108,7 +112,8 @@ class RecipeIngredient(models.Model):
         'Количество',
         validators=[MinValueValidator(
             MIN_INGREDIENT_AMOUNT,
-            message=f'Минимум — {MIN_INGREDIENT_AMOUNT}')]
+            message=f'Минимум — {MIN_INGREDIENT_AMOUNT}'
+        )]
     )
 
     class Meta:
@@ -129,13 +134,13 @@ class UserRecipeBase(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='%(class)ss',
+        related_name='in_%(class)ss',
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE,
         related_name='in_%(class)ss',
+        on_delete=models.CASCADE,
         verbose_name='Рецепт'
     )
 
@@ -174,7 +179,7 @@ class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='authors',
+        related_name='followers',
         verbose_name='Автор'
     )
 

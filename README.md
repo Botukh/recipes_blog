@@ -3,12 +3,12 @@
  
  ## Технологический стек
 
-* **Python 3.12**
-* **Django 4.2** + **Django REST Framework 3.15**
-* **PostgreSQL 13**
-* **Gunicorn 23** — WSGI-сервер
-* **Nginx 1.18** — обратный прокси
-* **Docker 24 / Docker Compose v2**
+* **Python**
+* **Django** + **Django REST Framework**
+* **PostgreSQL**
+* **Gunicorn** — WSGI-сервер
+* **Nginx** — обратный прокси
+* **Docker/ Docker Compose**
 * CI/CD — **GitHub Actions** + **Docker Hub**
 
 ## Быстрый старт (без Docker, локально)

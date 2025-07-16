@@ -32,14 +32,6 @@ from .filters import RecipeFilter, IngredientSearchFilter
 from .utils import generate_shopping_list
 
 
-__all__ = [
-    'RecipeViewSet',
-    'IngredientViewSet',
-    'TagViewSet',
-    'UserViewSet',
-]
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -53,33 +45,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    def _add_to(self, model, user, pk):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        obj, created = model.objects.get_or_create(user=user, recipe=recipe)
+        if not created:
+            raise ValidationError(
+                f'Рецепт "{recipe}" уже добавлен в список'
+                f'{model._meta.verbose_name_plural.lower()}.'
+            )
+        return Response(
+            RecipeReadSerializer(
+                recipe, context={'request': self.request}).data,
+            status=status.HTTP_201_CREATED
+        )
+
     @staticmethod
     def _remove_from(model, user, pk):
         get_object_or_404(model, user=user, recipe_id=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def _add_to(self, model, user, pk):
-        if model.objects.filter(user=user, recipe_id=pk).exists():
-            raise ValidationError('Рецепт уже добавлен в список.')
-        model.objects.create(user=user, recipe_id=pk)
-        return Response(
-            RecipeReadSerializer(
-                Recipe.objects.get(pk=pk),
-                context={'request': self.request}
-            ).data,
-            status=status.HTTP_201_CREATED
-        )
-
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
         if not Recipe.objects.filter(pk=pk).exists():
-            return Response(
-                {'detail': 'Рецепт не найден.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
+            raise ValidationError(f'Рецепт с ID={pk} не найден.')
         short_url = request.build_absolute_uri(
-            reverse('recipe-short-url', kwargs={'recipe_uuid': pk})
+            reverse('recipe-short-url', args=[pk])
         )
         return Response({'short_link': short_url})
 
@@ -157,17 +147,22 @@ class UserViewSet(DjoserUserView):
             permission_classes=[IsAuthenticated])
     def subscribe(self, request, pk=None):
         author = get_object_or_404(User, pk=pk)
-        if request.method == 'POST':
-            if author == request.user:
-                raise ValidationError('Нельзя подписаться на себя.')
-            if Subscription.objects.filter(
+
+        if request.method == 'DELETE':
+            Subscription.objects.filter(
                 user=request.user, author=author
-            ).exists():
-                raise ValidationError(
-                    'Вы уже подписаны на этого пользователя.')
-            Subscription.objects.create(user=request.user, author=author)
-            return Response(status=status.HTTP_201_CREATED)
-        Subscription.objects.filter(
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        if author == request.user:
+            raise ValidationError('Нельзя подписаться на самого себя.')
+
+        _, created = Subscription.objects.get_or_create(
             user=request.user, author=author
-        ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        )
+        if not created:
+            raise ValidationError(
+                f'Вы уже подписаны на пользователя {author.username}.'
+            )
+
+        return Response(status=status.HTTP_201_CREATED)
