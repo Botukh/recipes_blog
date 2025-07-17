@@ -122,6 +122,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 
 class UserViewSet(DjoserUserView):
+    lookup_field = 'id'
 
     @action(
         detail=False,
@@ -155,9 +156,10 @@ class UserViewSet(DjoserUserView):
         detail=True,
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated],
+        url_path='subscribe',
     )
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(User, pk=pk)
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(User, id=id)
 
         if request.method == 'POST':
             if author == request.user:
@@ -171,10 +173,7 @@ class UserViewSet(DjoserUserView):
             Subscription.objects.create(user=request.user, author=author)
             return Response(status=status.HTTP_201_CREATED)
 
-        if request.method == 'DELETE':
-            get_object_or_404(
-                Subscription,
-                user=request.user,
-                author=author
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        get_object_or_404(
+            Subscription, user=request.user, author=author
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
