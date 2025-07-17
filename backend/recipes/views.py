@@ -1,12 +1,11 @@
-from django.shortcuts import render
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 
-from recipes.models import Recipe
+from .models import Recipe
 from api.utils import decode_base62
 
 
 def short_link_redirect(request, code):
-    """Возвращает страницу фронтенда для короткой ссылки."""
+    """Редирект на страницу рецепта по короткой ссылке."""
     try:
         recipe_id = decode_base62(code)
     except ValueError:
@@ -15,4 +14,4 @@ def short_link_redirect(request, code):
     if not Recipe.objects.filter(id=recipe_id).exists():
         raise Http404("Рецепт не найден")
 
-    return render(request, 'index.html')
+    return HttpResponseRedirect(f'/recipes/{recipe_id}/')
