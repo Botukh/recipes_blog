@@ -129,37 +129,33 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients_data = data.get('ingredients')
         tags_data = data.get('tags')
 
-        if not ingredients_data:
-            raise serializers.ValidationError({
-                'ingredients': 'Необходимо указать хотя бы один ингредиент.'
-            })
-
-        if not tags_data:
-            raise serializers.ValidationError({
-                'tags': 'Нужно указать хотя бы один тег.'
-            })
-
-        self._raise_on_duplicates(
-            [item['ingredient'] for item in ingredients_data],
-            'Ингредиенты должны быть уникальными. Повторы: {}',
-            field='ingredients'
+        self._validate_uniqueness(
+            values=[item['ingredient'] for item in ingredients_data],
+            error_message='Ингредиенты должны быть уникальными. Повторы: {}',
+            field='ingredients',
+            empty_message='Необходимо указать хотя бы один ингредиент.'
         )
 
-        self._raise_on_duplicates(
-            tags_data,
-            'Теги должны быть уникальными. Повторы: {}',
-            field='tags'
+        self._validate_uniqueness(
+            values=tags_data,
+            error_message='Теги должны быть уникальными. Повторы: {}',
+            field='tags',
+            empty_message='Нужно указать хотя бы один тег.'
         )
 
         return data
 
     @staticmethod
-    def _raise_on_duplicates(values, error_message, field):
+    def _validate_uniqueness(values, error_message, field, empty_message):
+        if not values:
+            raise serializers.ValidationError({field: empty_message})
         duplicates = [item for item, count in Counter(
-            values).items() if count > 1]
+            values
+        ).items() if count > 1]
         if duplicates:
             raise serializers.ValidationError(
-                {field: error_message.format(duplicates)})
+                {field: error_message.format(duplicates)}
+            )
 
     @staticmethod
     def _bulk_create_ingredients(recipe: Recipe, ingredients_data: list[dict]):
