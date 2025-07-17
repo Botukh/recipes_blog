@@ -29,7 +29,7 @@ from .serializers import (
     TagSerializer,
 )
 from .filters import RecipeFilter, IngredientSearchFilter
-from .utils import generate_shopping_list
+from .utils import generate_shopping_list, encode_base62
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -55,7 +55,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def _add_to(self, model, user, pk):
         recipe = get_object_or_404(Recipe, pk=pk)
-        obj, created = model.objects.get_or_create(user=user, recipe=recipe)
+        _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
             raise ValidationError(
                 f'Рецепт "{recipe}" уже добавлен в список'
@@ -74,12 +74,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
-        if not Recipe.objects.filter(pk=pk).exists():
-            raise ValidationError(f'Рецепт с ID={pk} не найден.')
+        recipe = get_object_or_404(Recipe, pk=pk)
+        code = encode_base62(recipe.id)
         short_url = request.build_absolute_uri(
-            reverse('recipe-short-url', args=[pk])
+            reverse('recipe-short-url', args=[code])
         )
-        return Response({'short_link': short_url})
+        return Response({'short-link': short_url})
 
     @action(detail=True, methods=['post'], url_path='favorite',
             permission_classes=[IsAuthenticated])
@@ -157,8 +157,8 @@ class UserViewSet(DjoserUserView):
         author = get_object_or_404(User, pk=pk)
 
         if request.method == 'DELETE':
-            Subscription.objects.filter(
-                user=request.user, author=author
+            get_object_or_404(
+                Subscription, user=request.user, author=author
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 

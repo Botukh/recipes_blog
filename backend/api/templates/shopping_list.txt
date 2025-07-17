@@ -1,4 +1,4 @@
-Список покупок от {{ date|date:"j E Y" }}
+Список покупок от {{ date|date:"j E Y года" }}
 
 Продукты:
 {% for item in ingredients %}
