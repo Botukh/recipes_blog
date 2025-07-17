@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (
@@ -22,6 +22,7 @@ from recipes.models import (
     User,
 )
 from .serializers import (
+    SubscriptionSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeShortSerializer,
@@ -155,25 +156,33 @@ class UserViewSet(DjoserUserView):
     @action(
         detail=True,
         methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated],
-        url_path='subscribe',
+        permission_classes=[IsAuthenticated]
     )
-    def subscribe(self, request, id=None):
-        author = get_object_or_404(User, id=id)
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(User, pk=pk)
 
         if request.method == 'POST':
             if author == request.user:
-                raise ValidationError('Нельзя подписаться на себя.')
+                raise serializers.ValidationError(
+                    'Нельзя подписаться на себя.'
+                )
 
             if Subscription.objects.filter(
                 user=request.user, author=author
             ).exists():
-                raise ValidationError('Вы уже подписаны на этого автора.')
+                raise serializers.ValidationError(
+                    'Вы уже подписаны на этого пользователя.'
+                )
 
             Subscription.objects.create(user=request.user, author=author)
-            return Response(status=status.HTTP_201_CREATED)
+            serializer = SubscriptionSerializer(
+                author, context={'request': request}
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         get_object_or_404(
             Subscription, user=request.user, author=author
         ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'detail': 'Подписка удалена'}, status=status.HTTP_204_NO_CONTENT
+        )
