@@ -69,16 +69,12 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class IngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    amount = serializers.IntegerField(read_only=True)
-    unit = serializers.SerializerMethodField()
+    measurement_unit = serializers.ReadOnlyField(source='ingredient.unit')
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'amount', 'unit')
+        fields = ('id', 'name', 'amount', 'measurement_unit')
         read_only_fields = fields
-
-    def get_unit(self, obj):
-        return obj.ingredient.unit
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
