@@ -123,7 +123,6 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 
 class UserViewSet(DjoserUserView):
-    lookup_field = 'id'
 
     @action(
         detail=False,
