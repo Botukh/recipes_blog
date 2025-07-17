@@ -152,10 +152,9 @@ class UserViewSet(DjoserUserView):
         )
 
     @action(detail=True, methods=['post', 'delete'],
-            url_path='subscribe', url_name='subscribe',
             permission_classes=[IsAuthenticated])
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(User, pk=pk)
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(User, id=id)
 
         if request.method == 'DELETE':
             get_object_or_404(
