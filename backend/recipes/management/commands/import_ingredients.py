@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from recipes.models import Ingredient
-
 from ._base_import import BaseImportCommand
 
 
