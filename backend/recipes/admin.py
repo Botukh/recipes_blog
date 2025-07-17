@@ -21,6 +21,14 @@ class RecipeIngredientInline(admin.TabularInline):
     extra = 1
     autocomplete_fields = ('ingredient',)
     min_num = 1
+    fields = ('ingredient', 'amount', 'get_unit')
+    readonly_fields = ('get_unit',)
+
+    @admin.display(description='Ед. изм.')
+    def get_unit(self, obj):
+        if obj.ingredient:
+            return obj.ingredient.unit
+        return '-'
 
 
 @admin.register(Tag)
