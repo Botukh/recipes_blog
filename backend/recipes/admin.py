@@ -114,8 +114,8 @@ class CookingTimeFilter(admin.SimpleListFilter):
              f'({self._count_recipes(recipes, "medium")})'
              ),
             ('long',
-             f'от {second_limit + 1} мин ({self._count_recipes(
-                 recipes, "long")})'),
+             f'от {second_limit + 1} мин'
+             f'({self._count_recipes(recipes, "long")})'),
         )
 
     def _count_recipes(self, queryset, key):
