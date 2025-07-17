@@ -77,7 +77,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
         code = encode_base62(recipe.id)
         short_url = request.build_absolute_uri(
-            reverse('recipe-short-url', args=[code])
+            reverse('short_link', args=[code])
         )
         return Response({'short-link': short_url})
 
