@@ -77,6 +77,9 @@ class IngredientReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'amount', 'unit')
         read_only_fields = fields
 
+    def get_unit(self, obj):
+        return obj.ingredient.unit
+
 
 class RecipeReadSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
