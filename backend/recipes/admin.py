@@ -225,6 +225,12 @@ class UserAdmin(DjangoUserAdmin):
     readonly_fields = ('avatar_preview',)
     inlines = (RecipeInline,)
 
+    fieldsets = DjangoUserAdmin.fieldsets + (
+        ('Дополнительно', {
+            'fields': ('avatar', 'avatar_preview'),
+        }),
+    )
+
     @admin.display(description='ФИО')
     def full_name(self, user):
         return f'{user.first_name} {user.last_name}'.strip()
