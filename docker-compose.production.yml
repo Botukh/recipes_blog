@@ -50,6 +50,5 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./docs:/usr/share/nginx/html/docs:ro
       - static:/staticfiles/
       - media:/app/media
