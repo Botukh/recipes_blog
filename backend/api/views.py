@@ -25,7 +25,6 @@ from .serializers import (
     SubscriptionSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
-    RecipeShortSerializer,
     RecipeWriteSerializer,
     TagSerializer,
 )

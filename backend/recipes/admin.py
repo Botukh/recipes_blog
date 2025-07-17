@@ -110,8 +110,8 @@ class CookingTimeFilter(admin.SimpleListFilter):
              f'до {first_limit} мин ({self._count_recipes(recipes, "quick")})'
              ),
             ('medium',
-             f'{first_limit + 1}–{second_limit} мин ({self._count_recipes(
-                 recipes, "medium")})'
+             f'{first_limit + 1}–{second_limit} мин'
+             f'({self._count_recipes(recipes, "medium")})'
              ),
             ('long',
              f'от {second_limit + 1} мин ({self._count_recipes(
