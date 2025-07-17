@@ -9,7 +9,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('s/<str:code>/', short_link_redirect, name='short_link'),
-    path('', include('recipes.urls')),
 ]
 
 if settings.DEBUG:
