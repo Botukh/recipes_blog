@@ -31,7 +31,7 @@ class TagAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рецептов')
     def recipe_count(self, tag):
-        return tag.recipe_set.count()
+        return tag.recipes.count()
 
 
 class HasRelatedFilter(admin.SimpleListFilter):
@@ -145,7 +145,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def favorites_count(self, recipe):
-        return recipe.favorite_set.count()
+        return recipe.in_favorites.count()
 
     @admin.display(description='Ингредиенты')
     def ingredient_list(self, recipe):
