@@ -155,8 +155,9 @@ class UserViewSet(DjoserUserView):
         methods=['post', 'delete'],
         permission_classes=[IsAuthenticated]
     )
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(User, pk=pk)
+    def subscribe(self, request, id=None, pk=None):
+        user_id = id or pk
+        author = get_object_or_404(User, pk=user_id)
 
         if request.method == 'POST':
             if author == request.user:
