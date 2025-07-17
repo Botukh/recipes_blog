@@ -70,11 +70,11 @@ class IngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     amount = serializers.IntegerField(read_only=True)
-    amount_unit = serializers.ReadOnlyField(source='ingredient.unit')
+    unit = serializers.ReadOnlyField(source='ingredient.unit')
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'amount', 'amount_unit')
+        fields = ('id', 'name', 'amount', 'unit')
         read_only_fields = fields
 
 
