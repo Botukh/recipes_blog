@@ -179,7 +179,7 @@ class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='followers',
+        related_name='authors',
         verbose_name='Автор'
     )
 

@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin, Group
-from django.db.models import Min, Max
 from django.utils.safestring import mark_safe
 
 from recipes.models import (
@@ -32,31 +31,40 @@ class TagAdmin(admin.ModelAdmin):
 
     @admin.display(description='Рецептов')
     def recipe_count(self, tag):
-        return tag.recipes.count()
+        return tag.recipe_set.count()
 
 
-class HasRecipeFilter(admin.SimpleListFilter):
-    title = 'Есть в рецептах'
-    parameter_name = 'has_recipes'
-    YES, NO = 'yes', 'no'
+class HasRelatedFilter(admin.SimpleListFilter):
+    YES = 'yes'
+    NO = 'no'
 
     def lookups(self, request, model_admin):
-        return ((self.YES, 'Да'), (self.NO, 'Нет'))
+        return (
+            (self.YES, 'Да'),
+            (self.NO, 'Нет'),
+        )
 
-    def queryset(self, request, ingredients):
+    def queryset(self, request, queryset):
         if self.value() == self.YES:
-            return ingredients.filter(
-                ingredient_recipes__isnull=False).distinct()
+            return queryset.filter(
+                **{f'{self.related_name}__isnull': False}
+            ).distinct()
         if self.value() == self.NO:
-            return ingredients.filter(ingredient_recipes__isnull=True)
-        return ingredients
+            return queryset.filter(**{f'{self.related_name}__isnull': True})
+        return queryset
+
+
+class HasRecipesFilter(HasRelatedFilter):
+    title = 'Есть рецепты'
+    parameter_name = 'has_recipes'
+    related_name = 'recipes'
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'unit', 'recipe_count')
     search_fields = ('name',)
-    list_filter = ('unit', HasRecipeFilter)
+    list_filter = ('unit', HasRecipesFilter)
     readonly_fields = ('recipe_count',)
 
     @admin.display(description='Рецептов')
@@ -70,43 +78,52 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         recipes = model_admin.get_queryset(request)
-        cooking_times = recipes.aggregate(
-            min_time=Min('cooking_time'),
-            max_time=Max('cooking_time'),
-        )
-        min_time = cooking_times['min_time']
-        max_time = cooking_times['max_time']
-        if min_time is None or max_time is None:
+        cooking_times = recipes.values_list(
+            'cooking_time', flat=True
+        ).distinct()
+        distinct_count = cooking_times.count() if hasattr(
+            cooking_times, 'count') else len(cooking_times)
+
+        if distinct_count < 3:
             return []
 
-        limits = [
-            (min_time, min_time + (max_time - min_time) // 3),
-            (min_time + (max_time - min_time) // 3,
-             min_time + 2 * (max_time - min_time) // 3),
-            (min_time + 2 * (max_time - min_time) // 3, max_time + 1)
-        ]
+        min_time = min(cooking_times)
+        max_time = max(cooking_times)
+        range_step = (max_time - min_time) // 3 or 1
+        first_limit = min_time + range_step
+        second_limit = min_time + 2 * range_step
         self.ranges = {
-            'quick': limits[0],
-            'medium': limits[1],
-            'long': limits[2],
+            'quick': (min_time, first_limit),
+            'medium': (first_limit + 1, second_limit),
+            'long': (second_limit + 1, max_time),
         }
-
         return (
-            ('quick', f'до {limits[0][1]} мин '
-             f'({recipes.filter(cooking_time__range=limits[0]).count()})'),
-            ('medium', f'{limits[1][0]}–{limits[1][1] - 1} мин '
-             f'({recipes.filter(cooking_time__range=limits[1]).count()})'),
-            ('long', f'от {limits[2][0]} мин '
-             f'({recipes.filter(cooking_time__range=limits[2]).count()})'),
+            ('quick',
+             f'до {first_limit} мин ({self._count_recipes(recipes, "quick")})'
+             ),
+            ('medium',
+             f'{first_limit + 1}–{second_limit} мин ({self._count_recipes(
+                 recipes, "medium")})'
+             ),
+            ('long',
+             f'от {second_limit + 1} мин ({self._count_recipes(
+                 recipes, "long")})'),
         )
 
-    def queryset(self, request, recipes):
-        if not hasattr(self, 'ranges'):
-            return recipes
+    def _count_recipes(self, queryset, key):
+        start, end = self.ranges[key]
+        return queryset.filter(
+            cooking_time__gte=start, cooking_time__lte=end
+        ).count()
+
+    def queryset(self, request, queryset):
         val = self.value()
-        if val in self.ranges:
-            return recipes.filter(cooking_time__range=self.ranges[val])
-        return recipes
+        if val in getattr(self, 'ranges', {}):
+            start, end = self.ranges[val]
+            return queryset.filter(
+                cooking_time__gte=start, cooking_time__lte=end
+            )
+        return queryset
 
 
 @admin.register(Recipe)
@@ -128,7 +145,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='В избранном')
     def favorites_count(self, recipe):
-        return recipe.in_favorites.count()
+        return recipe.favorite_set.count()
 
     @admin.display(description='Ингредиенты')
     def ingredient_list(self, recipe):
@@ -146,7 +163,8 @@ class RecipeAdmin(admin.ModelAdmin):
         if not recipe.image:
             return '-'
         return mark_safe(
-            f'<img src="{recipe.image.url}" style="max-height:50px;" />')
+            f'<img src="{recipe.image.url}" style="max-height:50px;" />'
+        )
 
 
 @admin.register(Favorite, ShoppingCart)
@@ -169,25 +187,6 @@ class RecipeInline(admin.TabularInline):
     readonly_fields = ('name',)
     can_delete = False
     show_change_link = True
-
-
-class HasRelatedFilter(admin.SimpleListFilter):
-    def lookups(self, request, model_admin):
-        return (('yes', 'Да'), ('no', 'Нет'))
-
-    def queryset(self, request, users):
-        value = self.value()
-        if value == 'yes':
-            return users.filter(**{f'{self.related_name}__isnull': False})
-        if value == 'no':
-            return users.filter(**{f'{self.related_name}__isnull': True})
-        return users
-
-
-class HasRecipesFilter(HasRelatedFilter):
-    title = 'Есть рецепты'
-    parameter_name = 'has_recipes'
-    related_name = 'recipes'
 
 
 class HasSubscriptionsFilter(HasRelatedFilter):
@@ -235,7 +234,8 @@ class UserAdmin(DjangoUserAdmin):
         if not user.avatar:
             return '-'
         return mark_safe(
-            f'<img src="{user.avatar.url}" style="max-height:40px;" />')
+            f'<img src="{user.avatar.url}" style="max-height:40px;" />'
+        )
 
     @admin.display(description='Рецептов')
     def recipe_count(self, user):
@@ -247,4 +247,4 @@ class UserAdmin(DjangoUserAdmin):
 
     @admin.display(description='Подписчики')
     def followers_count(self, user):
-        return Subscription.objects.filter(author=user).count()
+        return user.authors.count()
