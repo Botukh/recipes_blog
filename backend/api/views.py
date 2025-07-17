@@ -151,26 +151,30 @@ class UserViewSet(DjoserUserView):
             ).data
         )
 
-    @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated])
-    def subscribe(self, request, id=None):
-        author = get_object_or_404(User, id=id)
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated],
+    )
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(User, pk=pk)
+
+        if request.method == 'POST':
+            if author == request.user:
+                raise ValidationError('Нельзя подписаться на себя.')
+
+            if Subscription.objects.filter(
+                user=request.user, author=author
+            ).exists():
+                raise ValidationError('Вы уже подписаны на этого автора.')
+
+            Subscription.objects.create(user=request.user, author=author)
+            return Response(status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
             get_object_or_404(
-                Subscription, user=request.user, author=author
+                Subscription,
+                user=request.user,
+                author=author
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-        if author == request.user:
-            raise ValidationError('Нельзя подписаться на самого себя.')
-
-        _, created = Subscription.objects.get_or_create(
-            user=request.user, author=author
-        )
-        if not created:
-            raise ValidationError(
-                f'Вы уже подписаны на пользователя {author.username}.'
-            )
-
-        return Response(status=status.HTTP_201_CREATED)
