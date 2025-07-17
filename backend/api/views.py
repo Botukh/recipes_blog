@@ -143,14 +143,12 @@ class UserViewSet(DjoserUserView):
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
-        authors = User.objects.filter(following__user=request.user)
-        return self.get_paginated_response(
-            RecipeShortSerializer(
-                self.paginate_queryset(authors),
-                many=True,
-                context={'request': request}
-            ).data
+        authors = User.objects.filter(authors__user=request.user)
+        page = self.paginate_queryset(authors)
+        serializer = SubscriptionSerializer(
+            page, many=True, context={'request': request}
         )
+        return self.get_paginated_response(serializer.data)
 
     @action(
         detail=True,
