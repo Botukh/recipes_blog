@@ -151,10 +151,10 @@ class UserViewSet(DjoserUserView):
         return self.get_paginated_response(serializer.data)
 
     @action(
-    detail=True,
-    methods=['post', 'delete'],
-    permission_classes=[IsAuthenticated]
-)
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
     def subscribe(self, request, pk=None):
         if request.method == 'DELETE':
             subscription = get_object_or_404(
