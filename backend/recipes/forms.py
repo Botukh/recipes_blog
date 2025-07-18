@@ -18,6 +18,7 @@ class RecipeIngredientForm(forms.ModelForm):
         fields = ('ingredient', 'amount', 'unit_display')
 
     def __init__(self, *args, **kwargs):
+        """Инициализирует форму RecipeIngredientForm."""
         super().__init__(*args, **kwargs)
 
         ingredient = None
@@ -29,6 +30,5 @@ class RecipeIngredientForm(forms.ModelForm):
                 pass
         if not ingredient and hasattr(self.instance, 'ingredient'):
             ingredient = self.instance.ingredient
-
         if ingredient:
-            self.fields['unit_display'].initial = ingredient.measurement_unit
+            self.fields['unit_display'].initial = ingredient.unit
