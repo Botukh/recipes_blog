@@ -46,11 +46,13 @@ class HasRelatedFilter(admin.SimpleListFilter):
     YES = 'yes'
     NO = 'no'
 
+    LOOKUP_CHOICES = (
+        (YES, 'Да'),
+        (NO, 'Нет'),
+    )
+
     def lookups(self, request, model_admin):
-        return (
-            (self.YES, 'Да'),
-            (self.NO, 'Нет'),
-        )
+        return self.LOOKUP_CHOICES
 
     def queryset(self, request, queryset):
         if self.value() == self.YES:
@@ -58,7 +60,9 @@ class HasRelatedFilter(admin.SimpleListFilter):
                 **{f'{self.related_name}__isnull': False}
             ).distinct()
         if self.value() == self.NO:
-            return queryset.filter(**{f'{self.related_name}__isnull': True})
+            return queryset.filter(
+                **{f'{self.related_name}__isnull': True}
+            )
         return queryset
 
 
@@ -89,8 +93,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
         cooking_times = recipes.values_list(
             'cooking_time', flat=True
         ).distinct()
-        distinct_count = cooking_times.count() if hasattr(
-            cooking_times, 'count') else len(cooking_times)
+        distinct_count = len(cooking_times)
 
         if distinct_count < 3:
             return []
@@ -98,40 +101,34 @@ class CookingTimeFilter(admin.SimpleListFilter):
         min_time = min(cooking_times)
         max_time = max(cooking_times)
         range_step = (max_time - min_time) // 3 or 1
+
         first_limit = min_time + range_step
         second_limit = min_time + 2 * range_step
+
         self.ranges = {
             'quick': (min_time, first_limit),
             'medium': (first_limit + 1, second_limit),
             'long': (second_limit + 1, max_time),
         }
+
         return (
-            ('quick',
-             f'до {first_limit} мин ({self._count_recipes(recipes, "quick")})'
-             ),
-            ('medium',
-             f'{first_limit + 1}–{second_limit} мин'
-             f'({self._count_recipes(recipes, "medium")})'
-             ),
-            ('long',
-             f'от {second_limit + 1} мин'
-             f'({self._count_recipes(recipes, "long")})'),
+            ('quick', 
+             f'до {first_limit} мин'
+             f'({self._get_recipes(recipes, "quick").count()})'),
+            ('medium', f'{first_limit + 1}–{second_limit} мин'
+             f'({self._get_recipes(recipes, "medium").count()})'),
+            ('long', f'от {second_limit + 1} мин'
+             f'({self._get_recipes(recipes, "long").count()})'),
         )
 
-    def _count_recipes(self, queryset, key):
-        start, end = self.ranges[key]
-        return queryset.filter(
-            cooking_time__gte=start, cooking_time__lte=end
-        ).count()
+    def _get_recipes(self, recipes_queryset, key):
+        return recipes_queryset.filter(cooking_time__range=self.ranges[key])
 
-    def queryset(self, request, queryset):
-        val = self.value()
-        if val in getattr(self, 'ranges', {}):
-            start, end = self.ranges[val]
-            return queryset.filter(
-                cooking_time__gte=start, cooking_time__lte=end
-            )
-        return queryset
+    def queryset(self, request, recipes_queryset):
+        value = self.value()
+        if value in self.ranges:
+            return self._get_recipes(recipes_queryset, value)
+        return recipes_queryset
 
 
 @admin.register(Recipe)

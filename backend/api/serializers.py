@@ -66,37 +66,24 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-    is_subscribed = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(
+        source='recipes.count', read_only=True
+    )
 
-    class Meta:
-        model = User
-        fields = (
-            'id', 'email', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count',
-        )
-        read_only_fields = fields
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
 
-    def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and Subscription.objects.filter(user=user, author=obj).exists()
-        )
-
-    def get_recipes(self, obj):
+    def get_recipes(self, user):
         request = self.context.get('request')
-        recipes = obj.recipes.all()
-        limit = request.query_params.get('recipes_limit')
-
-        if limit and limit.isdigit():
-            recipes = recipes[:int(limit)]
+        limit = request.query_params.get('recipes_limit', 10**10)
+        try:
+            limit = int(limit)
+        except (ValueError, TypeError):
+            limit = 10**10
+        recipes = user.recipes.all()[:limit]
         return RecipeShortSerializer(recipes, many=True).data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class IngredientReadSerializer(serializers.ModelSerializer):
@@ -215,10 +202,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         instance.ingredient_amounts.all().delete()
-        instance = super().update(instance, validated_data)
         instance.tags.set(tags)
         self._bulk_create_ingredients(instance, ingredients_data)
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, recipe: Recipe):
         return RecipeReadSerializer(recipe, context=self.context).data

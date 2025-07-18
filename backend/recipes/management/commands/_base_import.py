@@ -13,16 +13,12 @@ class BaseImportCommand(BaseCommand):
     def handle(self, *args, **kwargs):
         try:
             rows = json.loads(self.data_path.read_text(encoding='utf-8'))
-            existing = set(self.model.objects.values_list('name', 'unit'))
-            to_create = [
-                self.model(**row)
-                for row in rows
-                if (row['name'], row['measurement_unit']) not in existing
-            ]
-            self.model.objects.bulk_create(to_create)
+            to_create = [self.model(**row) for row in rows]
+            created = self.model.objects.bulk_create(
+                to_create, ignore_conflicts=True)
             self.stdout.write(self.style.SUCCESS(
                 f'Импорт из {self.data_path.name} завершён: '
-                f'добавлено {len(to_create)} '
+                f'добавлено {len(created)} '
                 f'{self.model._meta.verbose_name_plural}'
             ))
         except Exception as exc:
