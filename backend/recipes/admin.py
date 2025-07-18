@@ -105,7 +105,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
         }
 
         return (
-            ('quick', 
+            ('quick',
              f'до {first_limit} мин'
              f'({self._get_recipes(recipes, "quick").count()})'),
             ('medium', f'{first_limit + 1}–{second_limit} мин'
