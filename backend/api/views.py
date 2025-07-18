@@ -23,7 +23,7 @@ from recipes.models import (
     User,
 )
 from .serializers import (
-    SubscriptionSerializer,
+    SubscribedAuthorSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
@@ -76,10 +76,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
         if not Recipe.objects.filter(pk=pk).exists():
-            return Response(
-                {'detail': 'Рецепт не найден.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise ValidationError(f'Рецепт с id={pk} не найден.')
         short_url = request.build_absolute_uri(
             reverse('short_link', args=[pk])
         )
@@ -148,44 +145,40 @@ class UserViewSet(DjoserUserView):
     def subscriptions(self, request):
         authors = User.objects.filter(authors__user=request.user)
         page = self.paginate_queryset(authors)
-        serializer = SubscriptionSerializer(
+        serializer = SubscribedAuthorSerializer(
             page, many=True, context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
 
     @action(
-        detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
-    )
+    detail=True,
+    methods=['post', 'delete'],
+    permission_classes=[IsAuthenticated]
+)
     def subscribe(self, request, pk=None):
-        if request.method == 'POST':
-            if int(pk) == request.user.id:
-                raise serializers.ValidationError(
-                    'Нельзя подписаться на самого себя.'
-                )
-
-            try:
-                Subscription.objects.create(user=request.user, author_id=pk)
-            except IntegrityError:
-                author = get_object_or_404(User, pk=pk)
-                raise serializers.ValidationError(
-                    f'Вы уже подписаны на пользователя {author.username}.'
-                )
-            author = get_object_or_404(User, pk=pk)
-            serializer = SubscriptionSerializer(
-                author, context={'request': request}
+        if request.method == 'DELETE':
+            subscription = get_object_or_404(
+                Subscription, user=request.user, author_id=pk
             )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        deleted, _ = Subscription.objects.filter(
-            user=request.user, author_id=pk
-        ).delete()
-        if deleted:
+            subscription.delete()
             return Response(
                 {'detail': 'Подписка удалена'},
                 status=status.HTTP_204_NO_CONTENT
             )
-        return Response(
-            {'detail': 'Вы не были подписаны на этого пользователя.'},
-            status=status.HTTP_400_BAD_REQUEST
+
+        if int(pk) == request.user.id:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя.'
+            )
+
+        try:
+            Subscription.objects.create(user=request.user, author_id=pk)
+        except IntegrityError:
+            author = get_object_or_404(User, pk=pk)
+            raise serializers.ValidationError(
+                f'Вы уже подписаны на пользователя {author.username}.'
+            )
+        serializer = SubscribedAuthorSerializer(
+            get_object_or_404(User, pk=pk), context={'request': request}
         )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

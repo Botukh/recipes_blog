@@ -12,16 +12,22 @@ from .models import (
     Tag,
     User,
 )
-from .forms import RecipeIngredientForm
 
 admin.site.unregister(Group)
 
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    form = RecipeIngredientForm
-    fields = ('ingredient', 'amount', 'unit_display')
     extra = 1
+    autocomplete_fields = ('ingredient',)
+    fields = ('ingredient', 'amount', 'get_unit')
+    readonly_fields = ('get_unit',)
+
+    @admin.display(description='Ед. изм.')
+    def get_unit(self, obj):
+        if obj.ingredient_id:
+            return obj.ingredient.unit
+        return '—'
 
 
 @admin.register(Tag)
@@ -82,18 +88,18 @@ class CookingTimeFilter(admin.SimpleListFilter):
     parameter_name = 'cook_time'
 
     def lookups(self, request, model_admin):
-        recipes = model_admin.get_queryset(request)
-        cooking_times = recipes.values_list(
+        self.recipes = model_admin.get_queryset(request)
+
+        cooking_times = self.recipes.values_list(
             'cooking_time', flat=True
         ).distinct()
-        distinct_count = len(cooking_times)
 
-        if distinct_count < 3:
+        if len(cooking_times) < 3:
             return []
 
         min_time = min(cooking_times)
         max_time = max(cooking_times)
-        range_step = (max_time - min_time) // 3 or 1
+        range_step = (max_time - min_time) // 3
 
         first_limit = min_time + range_step
         second_limit = min_time + 2 * range_step
@@ -105,23 +111,24 @@ class CookingTimeFilter(admin.SimpleListFilter):
         }
 
         return (
-            ('quick',
-             f'до {first_limit} мин'
-             f'({self._get_recipes(recipes, "quick").count()})'),
+            ('quick', f'до {first_limit} мин'
+                      f' ({self._get_recipes("quick").count()})'),
             ('medium', f'{first_limit + 1}–{second_limit} мин'
-             f'({self._get_recipes(recipes, "medium").count()})'),
+                       f' ({self._get_recipes("medium").count()})'),
             ('long', f'от {second_limit + 1} мин'
-             f'({self._get_recipes(recipes, "long").count()})'),
+                     f' ({self._get_recipes("long").count()})'),
         )
 
-    def _get_recipes(self, recipes_queryset, key):
-        return recipes_queryset.filter(cooking_time__range=self.ranges[key])
+    def _get_recipes(self, key, recipes=None):
+        if recipes is None:
+            recipes = self.recipes
+        return recipes.filter(cooking_time__range=self.ranges[key])
 
-    def queryset(self, request, recipes_queryset):
+    def queryset(self, request, recipes):
         value = self.value()
         if value in self.ranges:
-            return self._get_recipes(recipes_queryset, value)
-        return recipes_queryset
+            return self._get_recipes(value, recipes)
+        return recipes
 
 
 @admin.register(Recipe)

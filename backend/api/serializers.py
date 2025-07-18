@@ -66,14 +66,19 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class SubscriptionSerializer(UserSerializer):
+class SubscribedAuthorSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.IntegerField(
         source='recipes.count', read_only=True
     )
 
     class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+        fields = (
+            *UserSerializer.Meta.fields,
+            'recipes',
+            'recipes_count',
+        )
+        read_only_fields = fields
 
     def get_recipes(self, user):
         request = self.context.get('request')
