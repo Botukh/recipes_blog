@@ -20,9 +20,7 @@ class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
     autocomplete_fields = ('ingredient',)
-    fields = ('ingredient', 'amount', 'get_unit')
-    readonly_fields = ('get_unit',)
-
+    fields = ('ingredient', 'amount')
 
 
 @admin.register(Tag)
