@@ -1,9 +1,8 @@
-from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin, Group
 from django.utils.safestring import mark_safe
 
-from recipes.models import (
+from .models import (
     Favorite,
     Ingredient,
     Recipe,
@@ -13,59 +12,16 @@ from recipes.models import (
     Tag,
     User,
 )
+from .forms import RecipeIngredientForm
 
 admin.site.unregister(Group)
-
-
-class RecipeIngredientForm(forms.ModelForm):
-
-    class Meta:
-        model = RecipeIngredient
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['unit_display'] = forms.CharField(
-            label='Ед. изм.',
-            required=False,
-            widget=forms.TextInput(attrs={
-                'readonly': True,
-                'style': 'background-color: #f0f0f0; border: none; width: 60px;'
-            })
-        )
-        if self.instance.pk and self.instance.ingredient:
-            self.fields['unit_display'].initial = self.instance.ingredient.unit
-        self.fields['ingredient'].help_text = (
-            'Выберите ингредиент. Единица измерения отобразится автоматически.'
-        )
 
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     form = RecipeIngredientForm
-    extra = 1
-    autocomplete_fields = ('ingredient',)
-    min_num = 1
     fields = ('ingredient', 'amount', 'unit_display')
-    readonly_fields = ('unit_display',)
-
-    def get_formset(self, request, obj=None, **kwargs):
-        """Переопределяем formset для обработки единиц измерения."""
-        formset = super().get_formset(request, obj, **kwargs)
-
-        class CustomRecipeIngredientFormSet(formset):
-            def clean(self):
-                super().clean()
-                for form in self.forms:
-                    if form.cleaned_data and not form.cleaned_data.get(
-                        'DELETE'
-                    ):
-                        ingredient = form.cleaned_data.get('ingredient')
-                        if ingredient:
-                            form.fields['unit_display'].initial = ingredient.unit
-                            if hasattr(form, 'instance'):
-                                form.instance._unit_display = ingredient.unit
-        return CustomRecipeIngredientFormSet
+    extra = 1
 
 
 @admin.register(Tag)
