@@ -23,11 +23,6 @@ class RecipeIngredientInline(admin.TabularInline):
     fields = ('ingredient', 'amount', 'get_unit')
     readonly_fields = ('get_unit',)
 
-    @admin.display(description='Ед. изм.')
-    def get_unit(self, obj):
-        if obj.ingredient_id:
-            return obj.ingredient.unit
-        return '—'
 
 
 @admin.register(Tag)
