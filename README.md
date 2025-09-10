@@ -1,6 +1,6 @@
-![Build Status](https://github.com/Botukh/foodgram/actions/workflows/main.yml/badge.svg?event=push)
+![Build Status](https://github.com/Botukh/recipes_blog/actions/workflows/main.yml/badge.svg?event=push)
 
-«Фудграм» — сайт, на котором пользователи будут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям также будет доступен сервис «Список покупок». Он позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
+«Рецепты» — сайт, на котором пользователи будут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям также будет доступен сервис «Список покупок». Он позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
  Разработка      | *Ботух Юлия*     | [Telegram](https://t.me/botuh) |
  
  ## Технологический стек
@@ -16,8 +16,8 @@
 ## Быстрый старт (без Docker, локально)
 
 # 1 — Клонируем репозиторий
-git clone https://github.com/Botukh/foodgram-project.git
-cd foodgram-project
+git clone https://github.com/Botukh/recipes_blog.git
+cd recipes_blog
 
 # 2 — Создаём и активируем вирт-окружение
 python -m venv venv
@@ -42,9 +42,3 @@ python manage.py createsuperuser
 # 7 — Запускаем сервер
 python manage.py runserver
 
-
-| Раздел              | URL                                                                  |
-| ------------------- | -------------------------------------------------------------------- |
-| Сервер           | [foodgamm.zapto.org](https://foodgamm.zapto.org)                     |
-| Админка          | [foodgamm.zapto.org/admin/](https://foodgamm.zapto.org/admin/)       |
-| Документация API | [foodgamm.zapto.org/api/docs/](https://foodgamm.zapto.org/api/docs/) |
